@@ -353,6 +353,7 @@ Puppet::Functions.create_function(:hiera_vault) do
   def vault_read_resource(full_path, context)
     mount = full_path.split('/').first
     path  = full_path.gsub("#{mount}/", '')
+    path  = path.gsub('//', '/')
 
     begin
       value = $hiera_vault_client.kv(mount).read(path)
@@ -361,7 +362,7 @@ Puppet::Functions.create_function(:hiera_vault) do
       context.explain { msg }
       raise Puppet::DataBinding::LookupError, msg
     rescue Vault::HTTPError => e
-      msg = "[hiera-vault] Could not from path #{full_path}: #{e.errors.join("\n").rstrip}"
+      msg = "[hiera-vault] Could not read from path #{full_path}: #{e.errors.join("\n").rstrip}"
       context.explain { msg }
     end
     return nil if value.nil?
