@@ -8,6 +8,8 @@ group :test do
   gem 'coveralls',                  :require => false
   gem 'simplecov-console',          :require => false
   gem 'puppet_metadata', '~> 4.0',  :require => false
+  gem 'vault',                      :require => false
+  gem 'debouncer',                  :require => false
 end
 
 group :development do
