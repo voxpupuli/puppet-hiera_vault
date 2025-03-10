@@ -45,67 +45,65 @@ describe FakeFunction do
   end
 
   describe '#lookup_key' do
-
-
     context 'when vault is unsealed' do
       before(:context) do
-        vault_test_client.sys.mount('puppetcache', 'kv', 'puppet secrets v1', { "options" => {"version": "1" }})
+        vault_test_client.sys.mount('puppetcache', 'kv', 'puppet secrets v1', { 'options' => { version: '1' } })
       end
 
-      it 'should error when cache_for is not nil or a number' do
-        expect { function.lookup_key('test_key', vault_options.merge('cache_for' => 'invalid'), context) }
-          .to raise_error(ArgumentError, '[hiera-vault] invalid value for cache_for: \'invalid\', should be a number or nil')
+      it 'errors when cache_for is not nil or a number' do
+        expect { function.lookup_key('test_key', vault_options.merge('cache_for' => 'invalid'), context) }.
+          to raise_error(ArgumentError, '[hiera-vault] invalid value for cache_for: \'invalid\', should be a number or nil')
       end
 
-      it 'should not cache the response when cache_for is not set' do
+      it 'does not cache the response when cache_for is not set' do
         vault_test_client.logical.write('puppetcache/common/test_key', value: 'default')
 
-        expect(function.lookup_key('test_key', vault_options, context))
-          .to eq('value' => 'default')
+        expect(function.lookup_key('test_key', vault_options, context)).
+          to eq('value' => 'default')
 
         vault_test_client.logical.write('puppetcache/common/test_key', value: 'overwritten')
 
-        expect(function.lookup_key('test_key', vault_options, context))
-          .to eq('value' => 'overwritten')
+        expect(function.lookup_key('test_key', vault_options, context)).
+          to eq('value' => 'overwritten')
       end
 
-      it 'should cache the response for cache_for seconds when cache_for is set' do
+      it 'caches the response for cache_for seconds when cache_for is set' do
         vault_test_client.logical.write('puppetcache/common/test_key', value: 'default')
 
-        expect(function.lookup_key('test_key', vault_options.merge('cache_for' => 1), context))
-          .to eq('value' => 'default')
+        expect(function.lookup_key('test_key', vault_options.merge('cache_for' => 1), context)).
+          to eq('value' => 'default')
 
         vault_test_client.logical.write('puppetcache/common/test_key', value: 'overwritten')
 
-        expect(function.lookup_key('test_key', vault_options.merge('cache_for' => 1), context))
-          .to eq('value' => 'default')
+        expect(function.lookup_key('test_key', vault_options.merge('cache_for' => 1), context)).
+          to eq('value' => 'default')
 
         sleep(2)
 
-        expect(function.lookup_key('test_key', vault_options.merge('cache_for' => 1), context))
-          .to eq('value' => 'overwritten')
+        expect(function.lookup_key('test_key', vault_options.merge('cache_for' => 1), context)).
+          to eq('value' => 'overwritten')
       end
 
-      it 'should cache even if there is no value in Vault' do
-        expect(function.lookup_key('missed', vault_options.merge('cache_for' => 1), context))
-          .to eq(nil)
+      it 'caches even if there is no value in Vault' do
+        expect(function.lookup_key('missed', vault_options.merge('cache_for' => 1), context)).
+          to eq(nil)
 
         vault_test_client.logical.write('puppetcache/common/missed', value: 'overwritten')
 
-        expect(function.lookup_key('missed', vault_options.merge('cache_for' => 1), context))
-          .to eq(nil)
+        expect(function.lookup_key('missed', vault_options.merge('cache_for' => 1), context)).
+          to eq(nil)
       end
 
-      it 'should not cache the response when options changes' do
+      it 'does not cache the response when options changes' do
         vault_test_client.logical.write('puppetcache/common/options_change', value: 'default')
 
-        expect(function.lookup_key('options_change', vault_options.merge('cache_for' => 1), context))
-          .to eq('value' => 'default')
+        expect(function.lookup_key('options_change', vault_options.merge('cache_for' => 1), context)).
+          to eq('value' => 'default')
 
         vault_test_client.logical.write('puppetcache/common/options_change', value: 'overwritten')
 
-        expect(function.lookup_key('options_change', vault_options.merge('cache_for' => 2), context))
-          .to eq('value' => 'overwritten')
+        expect(function.lookup_key('options_change', vault_options.merge('cache_for' => 2), context)).
+          to eq('value' => 'overwritten')
       end
     end
   end
