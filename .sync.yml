@@ -1,0 +1,6 @@
+---
+Gemfile:
+  optional:
+    ':test':
+      - gem: 'vault'
+      - gem: 'debouncer'
