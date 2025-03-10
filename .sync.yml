@@ -6,4 +6,4 @@ Gemfile:
       - gem: 'debouncer'
 .github/workflows/ci.yml:
   with:
-    additional_packages: extrepo && extrepo enable hashicorp && apt-get update && apt-get install -y vault
+    additional_packages: extrepo extrepo-offline-data && sudo sed -i "/- non-free/ s/#//" /etc/extrepo/config.yaml && sudo extrepo enable hashicorp && sudo apt-get update && sudo apt-get install -y vault

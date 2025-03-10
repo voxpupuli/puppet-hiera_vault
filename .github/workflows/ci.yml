@@ -20,3 +20,5 @@ jobs:
   puppet:
     name: Puppet
     uses: voxpupuli/gha-puppet/.github/workflows/basic.yml@v3
+    with:
+      additional_packages: 'extrepo extrepo-offline-data && sudo sed -i "/- non-free/ s/# //" /etc/extrepo/config.yaml && cat /etc/extrepo/config.yaml && sudo extrepo enable hashicorp && sudo apt-get update && sudo apt-get install -y vault'
