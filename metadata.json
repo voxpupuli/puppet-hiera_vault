@@ -37,6 +37,10 @@
     {
       "name": "puppet",
       "version_requirement": ">= 4.10.0 < 7.0.0"
+    },
+    {
+      "name": "openvox",
+      "version_requirement": ">= 4.10.0 < 7.0.0"
     }
   ],
   "pdk-version": "1.8.0",
