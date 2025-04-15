@@ -3,20 +3,19 @@
 #
 # https://github.com/hashicorp/vault-ruby/blob/master/spec/support/vault_server.rb
 #
-#
-#
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
+
 require 'open-uri'
 require 'singleton'
 require 'timeout'
 require 'tempfile'
-require 'vault'
 
 module RSpec
   class VaultServer
     include Singleton
 
     TOKEN_PATH = File.expand_path('~/.vault-token').freeze
-    TOKEN_PATH_BKUP = "#{TOKEN_PATH}.bak".freeze
 
     def self.method_missing(m, *args, &block)
       instance.public_send(m, *args, &block)
@@ -27,15 +26,10 @@ module RSpec
     def initialize
       # If there is already a vault-token, we need to move it so we do not
       # clobber!
-      if File.exist?(TOKEN_PATH)
-        FileUtils.mv(TOKEN_PATH, TOKEN_PATH_BKUP)
-        at_exit do
-          FileUtils.mv(TOKEN_PATH_BKUP, TOKEN_PATH)
-        end
-      end
+      FileUtils.rm_rf(TOKEN_PATH) if File.exist?(TOKEN_PATH)
 
       io = Tempfile.new('vault-server')
-      pid = Process.spawn({}, 'vault server -dev', out: io.to_i, err: io.to_i)
+      pid = Process.spawn('vault server -dev -dev-root-token-id=root', out: io.to_i, err: io.to_i)
 
       at_exit do
         Process.kill('INT', pid)
@@ -44,20 +38,22 @@ module RSpec
         io.close
         io.unlink
       end
+      wait_for_ready
+      puts 'vault server is ready'
+      # sleep to get unseal token
+      sleep 5
 
-      wait_for_ready do
-        @token = File.read(TOKEN_PATH)
+      @token = 'root'
 
-        output = ''
-        while io.rewind
-          output = io.read
-          break unless output.empty?
-        end
-
-        raise 'Vault did not return an unseal token!' unless output.match(%r{Unseal Key.*: (.+)})
-
-        @unseal_token = ::Regexp.last_match(1).strip
+      output = ''
+      while io.rewind
+        output = io.read
+        break unless output.empty?
       end
+
+      raise 'Vault did not return an unseal token!' unless output.match(%r{Unseal Key.*: (.+)})
+
+      @unseal_token = ::Regexp.last_match(1).strip
     end
 
     def address
@@ -65,13 +61,20 @@ module RSpec
     end
 
     def wait_for_ready
-      Timeout.timeout(10) do
-        sleep(0.25) until File.exist?(TOKEN_PATH)
+      uri = URI("#{address}/v1/sys/health")
+      Timeout.timeout(15) do
+        loop do
+          begin
+            response = Net::HTTP.get_response(uri)
+            return true if response.code != 200
+          rescue Errno::ECONNREFUSED
+            puts 'waiting for vault to start'
+          end
+          sleep 2
+        end
       end
-
-      yield
     rescue Timeout::Error
-      raise 'Vault did not start in 10 seconds!'
+      raise TimeoutError, 'Timed out waiting for vault health check'
     end
   end
 end
