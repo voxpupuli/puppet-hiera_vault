@@ -54,6 +54,7 @@ module RSpec
       raise "Vault did not return an unseal token! Output is: #{output}" unless output.match(%r{Unseal Key.*: (.+)})
 
       @unseal_token = ::Regexp.last_match(1).strip
+      puts "unseal token is: #{@unseal_token}"
     end
 
     def host
