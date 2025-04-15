@@ -26,7 +26,7 @@ module RSpec
     def initialize
       # If there is already a vault-token, we need to move it so we do not
       # clobber!
-      FileUtils.rm_rf(TOKEN_PATH) if File.exist?(TOKEN_PATH)
+      FileUtils.rm_rf(TOKEN_PATH)
 
       io = Tempfile.new('vault-server')
       pid = Process.spawn('vault server -dev -dev-root-token-id=root', out: io.to_i, err: io.to_i)
