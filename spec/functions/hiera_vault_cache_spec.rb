@@ -49,6 +49,8 @@ describe FakeFunction do
       before(:context) do
         vault_test_client.sys.mount('puppetcache', 'kv', 'puppet secrets v1', { 'options' => { version: '1' } })
       end
+      puts "vault address is #{RSpec::VaultServer.address}"
+      puts "vault token is #{RSpec::VaultServer.address}"
 
       it 'errors when cache_for is not nil or a number' do
         expect { function.lookup_key('test_key', vault_options.merge('cache_for' => 'invalid'), context) }.
