@@ -29,7 +29,7 @@ module RSpec
       FileUtils.rm_rf(TOKEN_PATH)
 
       io = Tempfile.new('vault-server')
-      pid = Process.spawn('vault server -dev -dev-root-token-id=root', out: io.to_i, err: io.to_i)
+      pid = Process.spawn('vault server -dev -dev-root-token-id=root -dev-listen-address=#{host}:#{port}', out: io.to_i, err: io.to_i)
 
       at_exit do
         Process.kill('INT', pid)
@@ -56,8 +56,16 @@ module RSpec
       @unseal_token = ::Regexp.last_match(1).strip
     end
 
+    def host
+      '127.0.0.1'
+    end
+
+    def port
+      8200 + ENV.fetch('TEST_ENV_NUMBER', 0).to_i
+    end
+
     def address
-      'http://127.0.0.1:8200'
+      "http://#{host}:#{port}"
     end
 
     def wait_for_ready
