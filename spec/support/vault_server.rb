@@ -51,7 +51,7 @@ module RSpec
         break unless output.empty?
       end
 
-      raise 'Vault did not return an unseal token!' unless output.match(%r{Unseal Key.*: (.+)})
+      raise "Vault did not return an unseal token! Output is: #{output}" unless output.match(%r{Unseal Key.*: (.+)})
 
       @unseal_token = ::Regexp.last_match(1).strip
     end
