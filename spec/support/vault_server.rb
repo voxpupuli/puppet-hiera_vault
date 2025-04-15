@@ -29,7 +29,7 @@ module RSpec
       FileUtils.rm_rf(TOKEN_PATH)
 
       io = Tempfile.new('vault-server')
-      pid = Process.spawn('vault server -dev -dev-root-token-id=root -dev-listen-address=#{host}:#{port}', out: io.to_i, err: io.to_i)
+      pid = Process.spawn("vault server -dev -dev-root-token-id=root -dev-listen-address=#{host}:#{port}", out: io.to_i, err: io.to_i)
 
       at_exit do
         Process.kill('INT', pid)
