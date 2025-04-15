@@ -51,7 +51,7 @@ describe FakeFunction do
       end
 
       puts "vault address is #{RSpec::VaultServer.address}"
-      puts "vault token is #{RSpec::VaultServer.address}"
+      puts "vault token is #{RSpec::VaultServer.token}"
 
       it 'errors when cache_for is not nil or a number' do
         expect { function.lookup_key('test_key', vault_options.merge('cache_for' => 'invalid'), context) }.
