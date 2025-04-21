@@ -137,10 +137,10 @@ The following are optional configuration parameters supported in the `options` h
 | `token`                  | The token to authenticate with Vault, also read as `ENV["VAULT_TOKEN"]` or a full path to the file with the token (eg. `/etc/vault_token.txt`). When bootstrapping, you can set this token as `IGNORE-VAULT` and the backend will be stubbed, which can be useful when bootstrapping.
 | `cache_for`              | How long to cache a given key in seconds. If not present the response will never be cached.
 | `confine_to_keys`        | Only use this backend if the key matches one of the regexes in the array, to avoid constantly reaching out to Vault for every parameter lookup
-| `continue_if_not_found`  | Allow hiera to look beyond vault if the value is not found
+| `continue_if_not_found`  | Allow hiera to look beyond vault if the value is not found (default: `false`)
 | `strip_from_keys`        | Patterns to strip from keys before lookup
 | `default_field`          | The default field within data to return. If not present, the lookup will be the full contents of the secret data.
-| `default_field_behavior` | seting to `ignore` or undefined will **always** retugn the value of `default_field` key from the object retrieved from Vault, even if other keys exist. If set to `only`, it **returns a single string if there's one and only one field named after `default_field` in Vault**, otherwise it returns a Hash of all found keys and values.
+| `default_field_behavior` | setting to `ignore` or undefined will **always** return the value of the `default_field`-named key from the object retrieved from Vault, even if other keys exist. If set to `only`, it **returns a single string if there's one and only one field named after `default_field` in Vault**, otherwise it returns a Hash of all found keys and values.
 | `default_field_parse`    | setting to `string` or undefined will parse the default field as string, `json` will parse it as JSON data
 | `mounts`                 | The list of mounts you want to do lookups against. This is treated as the backend hiearchy for lookup. It is recomended you use [Trusted Facts](https://puppet.com/docs/puppet/5.3/lang_facts_and_builtin_vars.html#trusted-facts) within the hierachy to ensure lookups are restricted to the correct hierachy points. See [Mounts](#mounts).
 | `ssl_verify`             | Specify whether to verify SSL certificates (default: `true`)
@@ -148,9 +148,9 @@ The following are optional configuration parameters supported in the `options` h
 | `ssl_ca_cert`            | [vault-ruby's client](https://github.com/hashicorp/vault-ruby) configuration of the certificate authority
 | `ssl_ca_path`            | [vault-ruby's client](https://github.com/hashicorp/vault-ruby) CA path
 | `ssl_ciphers`            | [vault-ruby's client](https://github.com/hashicorp/vault-ruby) configuration of TLS ciphers
-| `strict_mode`            | When enabled, the lookup function fail in case of http errors when looking up a secret.
-| `v1_lookup`              | whether to lookup within kv v1 hierarchy (default `true`) - disable if you only use kv v2 :) See [Less lookups](#less-lookups).
-| `v2_guess_mount`         | whether to try to guess mount for KV v2 (default `true`) - add `data` after your mount and disable to minimize amount of misses. See [Less lookups](#less-lookups).
+| `strict_mode`            | When enabled, the lookup function fails in case of http errors when looking up a secret.
+| `v1_lookup`              | whether to lookup within kv v1 hierarchy (default: `true`) - disable if you only use kv v2 :) See [Less lookups](#less-lookups).
+| `v2_guess_mount`         | whether to try to guess mount for KV v2 (default: `true`) - add `data` after your mount and disable this option to minimize amount of misses. See [Less lookups](#less-lookups).
 
 #### Example use of `confine_to_keys`
 
