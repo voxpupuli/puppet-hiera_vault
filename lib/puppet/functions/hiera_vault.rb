@@ -21,7 +21,7 @@ class Cache
   CacheValue = Struct.new(:value, :until)
 
   def initialize
-    @caches = Hash.new {|hash, key| hash[key] = {} }
+    @caches = Hash.new { |hash, key| hash[key] = {} }
   end
 
   def set(key, value, options)
@@ -76,7 +76,6 @@ class Cache
 end
 
 Puppet::Functions.create_function(:hiera_vault) do
-
   begin
     require 'json'
   rescue LoadError => e
@@ -97,7 +96,6 @@ Puppet::Functions.create_function(:hiera_vault) do
   rescue LoadError => e
     raise Puppet::DataBinding::LookupError, "[hiera-vault] Must install thread gem to use hiera-vault backend"
   end
-
 
   dispatch :lookup_key do
     param 'Variant[String, Numeric]', :key
@@ -130,7 +128,6 @@ Puppet::Functions.create_function(:hiera_vault) do
   end
 
   def lookup_key(key, options, context)
-
     if confine_keys = options['confine_to_keys']
       raise ArgumentError, '[hiera-vault] confine_to_keys must be an array' unless confine_keys.is_a?(Array)
 
@@ -177,30 +174,27 @@ Puppet::Functions.create_function(:hiera_vault) do
     end
   end
 
-
   def vault_get(key, options, context)
-
-    if ! ['string','json',nil].include?(options['default_field_parse'])
+    if !['string', 'json', nil].include?(options['default_field_parse'])
       raise ArgumentError, "[hiera-vault] invalid value for default_field_parse: '#{options['default_field_parse']}', should be one of 'string','json'"
     end
 
-    if ! ['ignore','only',nil].include?(options['default_field_behavior'])
+    if !['ignore', 'only', nil].include?(options['default_field_behavior'])
       raise ArgumentError, "[hiera-vault] invalid value for default_field_behavior: '#{options['default_field_behavior']}', should be one of 'ignore','only'"
     end
 
-    if (! options['cache_for'].nil?) &&  (! options['cache_for'].is_a? Numeric)
+    if (!options['cache_for'].nil?) && (!options['cache_for'].is_a? Numeric)
       raise ArgumentError, "[hiera-vault] invalid value for cache_for: '#{options['cache_for']}', should be a number or nil"
     end
 
     $hiera_vault_mutex.synchronize do
       cached_value = $cache.get(key, options)
-      return cached_value.value if ! cached_value.nil?
+      return cached_value.value if !cached_value.nil?
 
       # If our Vault client has got cleaned up by a previous shutdown call, reinstate it
       if $hiera_vault_client.nil?
         $hiera_vault_client = Vault::Client.new
       end
-
 
       begin
         $hiera_vault_client.configure do |config|
@@ -275,25 +269,23 @@ Puppet::Functions.create_function(:hiera_vault) do
           next if secret.nil?
 
           context.explain { "[hiera-vault] Read secret: #{key}" }
-          if (options['default_field'] and ( ['ignore', nil].include?(options['default_field_behavior']) ||
-          (secret.has_key?(options['default_field'].to_sym) && secret.length == 1) ) )
-
-          if ! secret.has_key?(options['default_field'].to_sym)
-            $cache.set(key, nil, options)
-            return nil
-          end
-
-          new_answer = secret[options['default_field'].to_sym]
-
-          if options['default_field_parse'] == 'json'
-            begin
-              new_answer = JSON.parse(new_answer, :quirks_mode => true)
-            rescue JSON::ParserError => e
-              context.explain { "[hiera-vault] Could not parse string as json: #{e}" }
+          if (options['default_field'] and (['ignore', nil].include?(options['default_field_behavior']) ||
+                                            (secret.has_key?(options['default_field'].to_sym) && secret.length == 1)))
+            if !secret.has_key?(options['default_field'].to_sym)
+              $cache.set(key, nil, options)
+              return nil
             end
-          end
 
-        else
+            new_answer = secret[options['default_field'].to_sym]
+
+            if options['default_field_parse'] == 'json'
+              begin
+                new_answer = JSON.parse(new_answer, :quirks_mode => true)
+              rescue JSON::ParserError => e
+                context.explain { "[hiera-vault] Could not parse string as json: #{e}" }
+              end
+            end
+          else
             # Turn secret's hash keys into strings allow for nested arrays and hashes
             # this enables support for create resources etc
             new_answer = secret.inject({}) { |h, (k, v)| h[k.to_s] = stringify_keys v; h }
