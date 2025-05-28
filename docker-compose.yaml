@@ -1,5 +1,0 @@
-version: '2'
-services:
-  hiera_vault:
-    build: .
-    command: bundle exec rake spec
