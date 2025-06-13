@@ -21,7 +21,7 @@ class Cache
   CacheValue = Struct.new(:value, :until)
 
   def initialize
-    @caches = Hash.new {|hash, key| hash[key] = {} }
+    @caches = Hash.new { |hash, key| hash[key] = {} }
   end
 
   def set(key, value, options)
@@ -55,7 +55,7 @@ class Cache
 
     # We don't need to check whether the value has expired because it would
     # have been removed during prune
-    return cache[k]
+    cache[k]
   end
 
   # Removes all the expired entries from the cache
@@ -65,9 +65,7 @@ class Cache
         # Because the entries in each cache are ordered we can stop as soon as
         # we find one that we need to keep, all the following ones will be
         # younger and need to be kept too
-        if value.until >= Time.now
-          break
-        end
+        break if value.until >= Time.now
 
         cache.delete(key)
       end
@@ -76,28 +74,25 @@ class Cache
 end
 
 Puppet::Functions.create_function(:hiera_vault) do
-
   begin
     require 'json'
   rescue LoadError => e
-    raise Puppet::DataBinding::LookupError, "[hiera-vault] Must install json gem to use hiera-vault backend"
+    raise Puppet::DataBinding::LookupError, '[hiera-vault] Must install json gem to use hiera-vault backend'
   end
   begin
     require 'vault'
   rescue LoadError => e
-    raise Puppet::DataBinding::LookupError, "[hiera-vault] Must install vault gem to use hiera-vault backend"
+    raise Puppet::DataBinding::LookupError, '[hiera-vault] Must install vault gem to use hiera-vault backend'
   end
   begin
     require 'debouncer'
   rescue LoadError => e
-    raise Puppet::DataBinding::LookupError, "[hiera-vault] Must install debouncer gem to use hiera-vault backend"
+    raise Puppet::DataBinding::LookupError, '[hiera-vault] Must install debouncer gem to use hiera-vault backend'
   end
   begin
-    require 'thread'
   rescue LoadError => e
-    raise Puppet::DataBinding::LookupError, "[hiera-vault] Must install thread gem to use hiera-vault backend"
+    raise Puppet::DataBinding::LookupError, '[hiera-vault] Must install thread gem to use hiera-vault backend'
   end
-
 
   dispatch :lookup_key do
     param 'Variant[String, Numeric]', :key
@@ -109,12 +104,12 @@ Puppet::Functions.create_function(:hiera_vault) do
 
   $hiera_vault_mutex = Mutex.new
   $hiera_vault_client = Vault::Client.new
-  $hiera_vault_shutdown = Debouncer.new(10) {
+  $hiera_vault_shutdown = Debouncer.new(10) do
     $hiera_vault_mutex.synchronize do
-      $hiera_vault_client.shutdown()
+      $hiera_vault_client.shutdown
       $hiera_vault_client = nil
     end
-  }
+  end
 
   def vault_token(options)
     token = nil
@@ -122,15 +117,12 @@ Puppet::Functions.create_function(:hiera_vault) do
     token = ENV['VAULT_TOKEN'] unless ENV['VAULT_TOKEN'].nil?
     token ||= options['token'] unless options['token'].nil?
 
-    if token.to_s.start_with?('/') and File.exist?(token)
-      token = File.read(token).strip.chomp
-    end
+    token = File.read(token).strip.chomp if token.to_s.start_with?('/') and File.exist?(token)
 
     token
   end
 
   def lookup_key(key, options, context)
-
     if confine_keys = options['confine_to_keys']
       raise ArgumentError, '[hiera-vault] confine_to_keys must be an array' unless confine_keys.is_a?(Array)
 
@@ -157,50 +149,35 @@ Puppet::Functions.create_function(:hiera_vault) do
     end
 
     if vault_token(options) == 'IGNORE-VAULT'
-      context.explain { "[hiera-vault] token set to IGNORE-VAULT - Quitting early" }
+      context.explain { '[hiera-vault] token set to IGNORE-VAULT - Quitting early' }
       return context.not_found
     end
 
-    if vault_token(options).nil?
-      raise ArgumentError, '[hiera-vault] no token set in options and no token in VAULT_TOKEN'
-    end
+    raise ArgumentError, '[hiera-vault] no token set in options and no token in VAULT_TOKEN' if vault_token(options).nil?
 
     result = vault_get(key, options, context)
 
     # Allow hiera to look beyond vault if the value is not found
     continue_if_not_found = options['continue_if_not_found'] || false
 
-    if result.nil? and continue_if_not_found
-      context.not_found
-    else
-      return result
-    end
+    return result unless result.nil? and continue_if_not_found
+
+    context.not_found
   end
 
-
   def vault_get(key, options, context)
+    raise ArgumentError, "[hiera-vault] invalid value for default_field_parse: '#{options['default_field_parse']}', should be one of 'string','json'" unless ['string', 'json', nil].include?(options['default_field_parse'])
 
-    if ! ['string','json',nil].include?(options['default_field_parse'])
-      raise ArgumentError, "[hiera-vault] invalid value for default_field_parse: '#{options['default_field_parse']}', should be one of 'string','json'"
-    end
+    raise ArgumentError, "[hiera-vault] invalid value for default_field_behavior: '#{options['default_field_behavior']}', should be one of 'ignore','only'" unless ['ignore', 'only', nil].include?(options['default_field_behavior'])
 
-    if ! ['ignore','only',nil].include?(options['default_field_behavior'])
-      raise ArgumentError, "[hiera-vault] invalid value for default_field_behavior: '#{options['default_field_behavior']}', should be one of 'ignore','only'"
-    end
-
-    if (! options['cache_for'].nil?) &&  (! options['cache_for'].is_a? Numeric)
-      raise ArgumentError, "[hiera-vault] invalid value for cache_for: '#{options['cache_for']}', should be a number or nil"
-    end
+    raise ArgumentError, "[hiera-vault] invalid value for cache_for: '#{options['cache_for']}', should be a number or nil" if !options['cache_for'].nil? && (!options['cache_for'].is_a? Numeric)
 
     $hiera_vault_mutex.synchronize do
       cached_value = $cache.get(key, options)
-      return cached_value.value if ! cached_value.nil?
+      return cached_value.value unless cached_value.nil?
 
       # If our Vault client has got cleaned up by a previous shutdown call, reinstate it
-      if $hiera_vault_client.nil?
-        $hiera_vault_client = Vault::Client.new
-      end
-
+      $hiera_vault_client = Vault::Client.new if $hiera_vault_client.nil?
 
       begin
         $hiera_vault_client.configure do |config|
@@ -213,9 +190,7 @@ Puppet::Functions.create_function(:hiera_vault) do
           config.ssl_ciphers = options['ssl_ciphers'] if config.respond_to? :ssl_ciphers
         end
 
-        if $hiera_vault_client.sys.seal_status.sealed?
-          raise Puppet::DataBinding::LookupError, "[hiera-vault] vault is sealed"
-        end
+        raise Puppet::DataBinding::LookupError, '[hiera-vault] vault is sealed' if $hiera_vault_client.sys.seal_status.sealed?
 
         context.explain { "[hiera-vault] Client configured to connect to #{$hiera_vault_client.address}" }
       rescue StandardError => e
@@ -227,11 +202,9 @@ Puppet::Functions.create_function(:hiera_vault) do
       answer = nil
       strict_mode = (options.key?('strict_mode') and options['strict_mode'])
 
-      if options['mounts']['generic']
-        raise ArgumentError, "[hiera-vault] generic is no longer valid - change to kv"
-      else
-        kv_mounts = options['mounts'].dup
-      end
+      raise ArgumentError, '[hiera-vault] generic is no longer valid - change to kv' if options['mounts']['generic']
+
+      kv_mounts = options['mounts'].dup
 
       # Only kv mounts supported so far
       kv_mounts.each_pair do |mount, paths|
@@ -244,7 +217,7 @@ Puppet::Functions.create_function(:hiera_vault) do
 
           paths = []
 
-          if options.fetch("v2_guess_mount", true)
+          if options.fetch('v2_guess_mount', true)
             paths << [:v2, File.join(mount, path, 'data', key).chomp('/')]
             paths << [:v2, File.join(mount, 'data', path, key).chomp('/')]
           else
@@ -252,51 +225,53 @@ Puppet::Functions.create_function(:hiera_vault) do
             paths << [:v2, File.join(mount, key).chomp('/')] if key.start_with?(path)
           end
 
-          paths << [:v1, File.join(mount, path, key)] if options.fetch("v1_lookup", true)
+          paths << [:v1, File.join(mount, path, key)] if options.fetch('v1_lookup', true)
 
           paths.each do |version_path|
-            begin
-              version, path = version_path[0], version_path[1]
-              context.explain { "[hiera-vault] Checking path: #{path}" }
-              response = $hiera_vault_client.logical.read(path)
-              next if response.nil?
-              secret = version == :v1 ? response.data : response.data[:data]
-            rescue Vault::HTTPConnectionError
-              msg = "[hiera-vault] Could not connect to read secret: #{secretpath}"
-              context.explain { msg }
-              raise Puppet::DataBinding::LookupError, msg
-            rescue Vault::HTTPError => e
-              msg = "[hiera-vault] Could not read secret #{secretpath}: #{e.errors.join("\n").rstrip}"
-              context.explain { msg }
-              raise Puppet::DataBinding::LookupError, "#{msg} - (strict_mode is true so raising as error)" if strict_mode
-            end
+            version = version_path[0]
+            path = version_path[1]
+            context.explain { "[hiera-vault] Checking path: #{path}" }
+            response = $hiera_vault_client.logical.read(path)
+            next if response.nil?
+
+            secret = version == :v1 ? response.data : response.data[:data]
+          rescue Vault::HTTPConnectionError
+            msg = "[hiera-vault] Could not connect to read secret: #{secretpath}"
+            context.explain { msg }
+            raise Puppet::DataBinding::LookupError, msg
+          rescue Vault::HTTPError => e
+            msg = "[hiera-vault] Could not read secret #{secretpath}: #{e.errors.join("\n").rstrip}"
+            context.explain { msg }
+            raise Puppet::DataBinding::LookupError, "#{msg} - (strict_mode is true so raising as error)" if strict_mode
           end
 
           next if secret.nil?
 
           context.explain { "[hiera-vault] Read secret: #{key}" }
-          if (options['default_field'] and ( ['ignore', nil].include?(options['default_field_behavior']) ||
-          (secret.has_key?(options['default_field'].to_sym) && secret.length == 1) ) )
+          if options['default_field'] and (['ignore', nil].include?(options['default_field_behavior']) ||
+          (secret.has_key?(options['default_field'].to_sym) && secret.length == 1))
 
-          if ! secret.has_key?(options['default_field'].to_sym)
-            $cache.set(key, nil, options)
-            return nil
-          end
-
-          new_answer = secret[options['default_field'].to_sym]
-
-          if options['default_field_parse'] == 'json'
-            begin
-              new_answer = JSON.parse(new_answer, :quirks_mode => true)
-            rescue JSON::ParserError => e
-              context.explain { "[hiera-vault] Could not parse string as json: #{e}" }
+            unless secret.has_key?(options['default_field'].to_sym)
+              $cache.set(key, nil, options)
+              return nil
             end
-          end
 
-        else
+            new_answer = secret[options['default_field'].to_sym]
+
+            if options['default_field_parse'] == 'json'
+              begin
+                new_answer = JSON.parse(new_answer, quirks_mode: true)
+              rescue JSON::ParserError => e
+                context.explain { "[hiera-vault] Could not parse string as json: #{e}" }
+              end
+            end
+
+          else
             # Turn secret's hash keys into strings allow for nested arrays and hashes
             # this enables support for create resources etc
-            new_answer = secret.inject({}) { |h, (k, v)| h[k.to_s] = stringify_keys v; h }
+            new_answer = secret.each_with_object({}) do |(k, v), h|
+              h[k.to_s] = stringify_keys v
+            end
           end
 
           unless new_answer.nil?
@@ -354,7 +329,7 @@ Puppet::Functions.create_function(:hiera_vault) do
       paths.clear
       segment.each do |option|
         p.each do |path|
-          paths << path + [option]
+          paths << (path + [option])
         end
       end
     end
