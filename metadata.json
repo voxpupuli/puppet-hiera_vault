@@ -7,9 +7,7 @@
   "source": "http://github.com/petems/hiera-vault",
   "project_page": "https://github.com/petems/hiera-vault",
   "issues_url": "https://github.com/petems/hiera-vault/issues",
-  "dependencies": [
-
-  ],
+  "dependencies": [],
   "operatingsystem_support": [
     {
       "operatingsystem": "Debian",
@@ -35,8 +33,8 @@
   ],
   "requirements": [
     {
-      "name": "puppet",
-      "version_requirement": ">= 7.0.0 < 9.0.0"
+      "name": "openvox",
+      "version_requirement": ">= 8.19.0 < 9.0.0"
     }
   ],
   "pdk-version": "1.8.0",
