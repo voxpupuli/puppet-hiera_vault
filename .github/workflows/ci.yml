@@ -22,7 +22,7 @@ permissions:
 jobs:
   puppet:
     name: Puppet
-    uses: voxpupuli/gha-puppet/.github/workflows/basic.yml@v3
+    uses: voxpupuli/gha-puppet/.github/workflows/basic.yml@v4
     with:
       unit_tests_rake_task: 'spec'
       additional_packages: 'extrepo extrepo-offline-data && sudo sed -i "s/trixie/bookworm/; /- non-free/ s/# //" /etc/extrepo/config.yaml && sudo extrepo enable hashicorp && sudo apt-get update && sudo apt-get install -y vault && sudo systemctl stop vault'
