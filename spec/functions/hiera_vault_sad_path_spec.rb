@@ -64,12 +64,12 @@ describe FakeFunction do
 
         it 'should error when passing invalid regexes' do
           expect { function.lookup_key('test_key', { 'confine_to_keys' => ['['] }, context) }
-            .to raise_error(Puppet::DataBinding::LookupError, '[hiera-vault] creating regexp failed with: premature end of char-class: /[/')
+            .to raise_error(Puppet::DataBinding::LookupError, '[hiera-vault] creating regexp for confine_to_keys failed with: premature end of char-class: /[/')
         end
 
         it 'should error when passing invalid regexes' do
           expect { function.lookup_key('test_key', { 'confine_to_keys' => ['['] }, context) }
-            .to raise_error(Puppet::DataBinding::LookupError, '[hiera-vault] creating regexp failed with: premature end of char-class: /[/')
+            .to raise_error(Puppet::DataBinding::LookupError, '[hiera-vault] creating regexp for confine_to_keys failed with: premature end of char-class: /[/')
         end
 
         it 'should error when strip_from_keys isnst an array' do
@@ -105,7 +105,7 @@ describe FakeFunction do
             vault_token_tmpfile.puts('not-valid-token')
             vault_token_tmpfile.close
             expect { function.lookup_key('test_key', vault_options.merge({'token' => vault_token_tmpfile.path}), context) }.
-              to output(/Could not read secret .+ permission denied/).to_stdout
+              to output(/Could not read secret puppet\/common:.*permission denied.*invalid token/m).to_stdout
           end
         end
 
