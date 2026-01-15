@@ -76,9 +76,7 @@ module RSpec
           begin
             response = Net::HTTP.get_response(uri)
             return true if response.code != 200
-          rescue Errno::ECONNREFUSED
-            puts 'waiting for vault to start'
-          rescue EOFError
+          rescue Errno::ECONNREFUSED, EOFError
             puts 'waiting for vault to start'
           end
           sleep 2
