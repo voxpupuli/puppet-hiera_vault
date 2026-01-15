@@ -66,8 +66,8 @@ describe FakeFunction do
             vault_token_tmpfile = Tempfile.open('w')
             vault_token_tmpfile.puts('not-valid-token')
             vault_token_tmpfile.close
-            expect { function.lookup_key('test_key', vault_options.merge({'token' => vault_token_tmpfile.path, 'strict_mode' => true}), context) }.
-              to raise_error(Puppet::DataBinding::LookupError, /\[hiera-vault\] Could not read secret puppet\/common:.*permission denied.*\(strict_mode is true so raising as error\)/m)
+            expect { function.lookup_key('test_key', vault_options.merge({ 'token' => vault_token_tmpfile.path, 'strict_mode' => true }), context) }.
+              to raise_error(Puppet::DataBinding::LookupError, %r{\[hiera-vault\] Could not read secret puppet/common:.*permission denied.*\(strict_mode is true so raising as error\)}m)
           end
 
           it 'does not throw error when file token is not valid and strict_mode is set to false' do
@@ -76,7 +76,7 @@ describe FakeFunction do
             vault_token_tmpfile.close
             expectation = expect { function.lookup_key('test_key', vault_options.merge({ 'token' => vault_token_tmpfile.path, 'strict_mode' => false }), context) }
             expectation.not_to raise_error
-            expectation.to output(/\[hiera-vault\] Could not read secret puppet\/common:.*permission denied/m).to_stdout
+            expectation.to output(%r{\[hiera-vault\] Could not read secret puppet/common:.*permission denied}m).to_stdout
             expectation.not_to output(%r{strict_mode is true so raising as error}).to_stdout
           end
 
@@ -86,7 +86,7 @@ describe FakeFunction do
             vault_token_tmpfile.close
             expectation = expect { function.lookup_key('test_key', vault_options.merge({ 'token' => vault_token_tmpfile.path }), context) }
             expectation.not_to raise_error
-            expectation.to output(/\[hiera-vault\] Could not read secret puppet\/common:.*permission denied/m).to_stdout
+            expectation.to output(%r{\[hiera-vault\] Could not read secret puppet/common:.*permission denied}m).to_stdout
             expectation.not_to output(%r{strict_mode is true so raising as error}).to_stdout
           end
         end

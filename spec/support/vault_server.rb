@@ -28,7 +28,7 @@ module RSpec
       # clobber!
       FileUtils.rm_rf(TOKEN_PATH)
 
-      io = Tempfile.new("vault-server")
+      io = Tempfile.new('vault-server')
       pid = Process.spawn({}, "vault server -dev -dev-listen-address=#{host}:#{port}", out: io.to_i, err: io.to_i)
 
       at_exit do
