@@ -78,6 +78,8 @@ module RSpec
             return true if response.code != 200
           rescue Errno::ECONNREFUSED
             puts 'waiting for vault to start'
+          rescue EOFError
+            puts 'waiting for vault to start'
           end
           sleep 2
         end
