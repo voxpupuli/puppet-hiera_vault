@@ -71,7 +71,7 @@ module RSpec
 
     def wait_for_ready
       uri = URI("#{address}/v1/sys/health")
-      Timeout.timeout(15) do
+      Timeout.timeout(30) do
         loop do
           begin
             response = Net::HTTP.get_response(uri)
