@@ -103,8 +103,8 @@ describe FakeFunction do
             vault_token_tmpfile = Tempfile.open('w')
             vault_token_tmpfile.puts('not-valid-token')
             vault_token_tmpfile.close
-            expect { function.lookup_key('test_key', vault_options.merge({ 'token' => vault_token_tmpfile.path }), context) }.
-              to output(%r{Could not read secret .+ permission denied}).to_stdout
+            expect { function.lookup_key('test_key', vault_options.merge({'token' => vault_token_tmpfile.path}), context) }.
+              to output(/Could not read secret .+ permission denied/m).to_stdout
           end
         end
       end

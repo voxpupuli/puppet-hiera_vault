@@ -28,8 +28,8 @@ module RSpec
       # clobber!
       FileUtils.rm_rf(TOKEN_PATH)
 
-      io = Tempfile.new('vault-server')
-      pid = Process.spawn("vault server -dev -dev-root-token-id=root -dev-listen-address=#{host}:#{port}", out: io.to_i, err: io.to_i)
+      io = Tempfile.new("vault-server")
+      pid = Process.spawn({}, "vault server -dev -dev-listen-address=#{host}:#{port}", out: io.to_i, err: io.to_i)
 
       at_exit do
         Process.kill('INT', pid)
@@ -57,16 +57,16 @@ module RSpec
       puts "unseal token is: #{@unseal_token}"
     end
 
+    def address
+      "http://#{host}:#{port}"
+    end
+
     def host
       '127.0.0.1'
     end
 
     def port
       8200 + ENV.fetch('TEST_ENV_NUMBER', 0).to_i
-    end
-
-    def address
-      "http://#{host}:#{port}"
     end
 
     def wait_for_ready
