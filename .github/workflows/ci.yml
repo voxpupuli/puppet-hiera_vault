@@ -1,0 +1,27 @@
+---
+# Managed by modulesync - DO NOT EDIT
+# https://voxpupuli.org/docs/updating-files-managed-with-modulesync/
+
+name: CI
+
+# yamllint disable-line rule:truthy
+on:
+  pull_request: {}
+  push:
+    branches:
+      - main
+      - master
+
+concurrency:
+  group: ${{ github.ref_name }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  puppet:
+    name: Puppet
+    uses: voxpupuli/gha-puppet/.github/workflows/basic.yml@v4
+    with:
+      additional_packages: 'extrepo extrepo-offline-data && sudo sed -i "s/trixie/bookworm/; /- non-free/ s/# //" /etc/extrepo/config.yaml && sudo extrepo enable hashicorp && sudo apt-get update && sudo apt-get install -y vault && sudo systemctl stop vault'

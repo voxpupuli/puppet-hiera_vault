@@ -1,0 +1,9 @@
+---
+Gemfile:
+  optional:
+    ':test':
+      - gem: 'vault'
+      - gem: 'debouncer'
+.github/workflows/ci.yml:
+  with:
+    additional_packages: extrepo extrepo-offline-data && sudo sed -i "s/trixie/bookworm/; /- non-free/ s/# //" /etc/extrepo/config.yaml && sudo extrepo enable hashicorp && sudo apt-get update && sudo apt-get install -y vault && sudo systemctl stop vault
