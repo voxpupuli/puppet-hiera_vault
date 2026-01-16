@@ -46,9 +46,7 @@ describe FakeFunction do
 
   describe '#lookup_key' do
     context 'accessing vault' do
-
       context 'when vault is unsealed' do
-
         context 'configuring vault' do
           let :context do
             ctx = instance_double('Puppet::LookupContext')
@@ -64,35 +62,34 @@ describe FakeFunction do
             ctx
           end
 
-          it 'should throw error when file token is not valid and strict_mode is set to true' do
+          it 'throws error when file token is not valid and strict_mode is set to true' do
             vault_token_tmpfile = Tempfile.open('w')
             vault_token_tmpfile.puts('not-valid-token')
             vault_token_tmpfile.close
-            expect { function.lookup_key('test_key', vault_options.merge({'token' => vault_token_tmpfile.path, 'strict_mode' => true}), context) }.
-              to raise_error(Puppet::DataBinding::LookupError, '[hiera-vault] Could not read secret puppet/common: permission denied - (strict_mode is true so raising as error)')
+            expect { function.lookup_key('test_key', vault_options.merge({ 'token' => vault_token_tmpfile.path, 'strict_mode' => true }), context) }.
+              to raise_error(Puppet::DataBinding::LookupError, %r{\[hiera-vault\] Could not read secret puppet/common:.*permission denied.*\(strict_mode is true so raising as error\)}m)
           end
 
-          it 'should not throw error when file token is not valid and strict_mode is set to false' do
+          it 'does not throw error when file token is not valid and strict_mode is set to false' do
             vault_token_tmpfile = Tempfile.open('w')
             vault_token_tmpfile.puts('not-valid-token')
             vault_token_tmpfile.close
-            expectation = expect { function.lookup_key('test_key', vault_options.merge({'token' => vault_token_tmpfile.path, 'strict_mode' => false}), context) }
-            expectation.to_not raise_error
-            expectation.to output(/\[hiera-vault\] Could not read secret puppet\/common: permission denied/).to_stdout
-            expectation.to_not output(/strict_mode is true so raising as error/).to_stdout
+            expectation = expect { function.lookup_key('test_key', vault_options.merge({ 'token' => vault_token_tmpfile.path, 'strict_mode' => false }), context) }
+            expectation.not_to raise_error
+            expectation.to output(%r{\[hiera-vault\] Could not read secret puppet/common:.*permission denied}m).to_stdout
+            expectation.not_to output(%r{strict_mode is true so raising as error}).to_stdout
           end
 
-          it 'should not throw error when file token is not valid and strict_mode is not set' do
+          it 'does not throw error when file token is not valid and strict_mode is not set' do
             vault_token_tmpfile = Tempfile.open('w')
             vault_token_tmpfile.puts('not-valid-token')
             vault_token_tmpfile.close
-            expectation = expect { function.lookup_key('test_key', vault_options.merge({'token' => vault_token_tmpfile.path}), context) }
-            expectation.to_not raise_error
-            expectation.to output(/\[hiera-vault\] Could not read secret puppet\/common: permission denied/).to_stdout
-            expectation.to_not output(/strict_mode is true so raising as error/).to_stdout
+            expectation = expect { function.lookup_key('test_key', vault_options.merge({ 'token' => vault_token_tmpfile.path }), context) }
+            expectation.not_to raise_error
+            expectation.to output(%r{\[hiera-vault\] Could not read secret puppet/common:.*permission denied}m).to_stdout
+            expectation.not_to output(%r{strict_mode is true so raising as error}).to_stdout
           end
         end
-
       end
     end
   end
