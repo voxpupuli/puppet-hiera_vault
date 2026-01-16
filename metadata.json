@@ -1,12 +1,12 @@
 {
-  "name": "petems-hiera_vault",
+  "name": "puppet-hiera_vault",
   "version": "2.0.0",
-  "author": "petems",
+  "author": "Vox Pupuli",
   "summary": "Hiera 5 backend to query data lookups from vault",
   "license": "Apache-2.0",
-  "source": "http://github.com/petems/hiera-vault",
-  "project_page": "https://github.com/petems/hiera-vault",
-  "issues_url": "https://github.com/petems/hiera-vault/issues",
+  "source": "http://github.com/voxpupuli/puppet-hiera_vault",
+  "project_page": "https://github.com/voxpupuli/puppet-hiera_vault",
+  "issues_url": "https://github.com/voxpupuli/puppet-hiera_vault/issues",
   "dependencies": [],
   "operatingsystem_support": [
     {
