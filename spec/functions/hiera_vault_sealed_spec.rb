@@ -46,20 +46,20 @@ describe FakeFunction do
 
   describe '#lookup_key' do
     context 'accessing vault' do
-
       context 'when vault is sealed' do
         before(:context) do
           vault_test_client.sys.seal
         end
-        it 'should raise error for Vault being sealed' do
-          expect { function.lookup_key('test_key', vault_options, context) }
-            .to raise_error(Puppet::DataBinding::LookupError, '[hiera-vault] Skipping backend. Configuration error: [hiera-vault] vault is sealed')
-        end
+
         after(:context) do
           vault_test_client.sys.unseal(RSpec::VaultServer.unseal_token)
         end
-      end
 
+        it 'raises error for Vault being sealed' do
+          expect { function.lookup_key('test_key', vault_options, context) }.
+            to raise_error(Puppet::DataBinding::LookupError, '[hiera-vault] Skipping backend. Configuration error: [hiera-vault] vault is sealed')
+        end
+      end
     end
   end
 end

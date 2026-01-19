@@ -91,7 +91,7 @@ Searching for "vault_notify"
 
 We can see that things are working.
 
-Then, lets say we change some code, and add an extra line: 
+Then, lets say we change some code, and add an extra line:
 
 ```
 $ docker-compose run --entrypoint='puppet lookup vault_notify --explain --compile --node=node1.vm' puppet | grep 'just added'

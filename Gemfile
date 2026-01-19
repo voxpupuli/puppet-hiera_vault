@@ -1,40 +1,30 @@
-source 'http://rubygems.org'
+# Managed by modulesync - DO NOT EDIT
+# https://voxpupuli.org/docs/updating-files-managed-with-modulesync/
+
+source ENV['GEM_SOURCE'] || 'https://rubygems.org'
 
 group :test do
-  if puppetversion = ENV['PUPPET_GEM_VERSION']
-    gem 'puppet', puppetversion, :require => false
-  else
-    gem 'puppet', ENV['PUPPET_VERSION'] || '~> 6'
-  end
-
-  gem 'json', ">= 2.3.0"
-  gem 'json_pure', ">= 2.3.1"
-  gem 'safe_yaml'
-
-  gem 'rake'
-  gem 'puppet-lint'
-  gem 'rspec'
-  gem 'rspec-puppet'
-  gem 'puppet-syntax'
-  gem 'puppetlabs_spec_helper'
-  gem 'simplecov'
-  gem 'simplecov-console'
-  gem 'metadata-json-lint'
-  gem 'vault', '>= 0.13.0'
-  gem 'debouncer'
+  gem 'voxpupuli-test', '~> 13.0',  :require => false
+  gem 'puppet_metadata', '~> 6.0',  :require => false
+  gem 'vault',                      :require => false
+  gem 'debouncer',                  :require => false
 end
 
 group :development do
-  gem 'puppet-blacksmith'
-  gem 'rubocop'
-  gem 'rubocop-rspec'
-  gem 'github_changelog_generator'
-  gem 'activesupport', '< 5'
-  gem 'pdk'
-  gem 'pry'
-  gem 'rb-readline'
+  gem 'guard-rake',               :require => false
+  gem 'overcommit', '>= 0.39.1',  :require => false
 end
 
-group :test do 
-  gem 'ddtrace', ">=0.51.0"
+group :system_tests do
+  gem 'voxpupuli-acceptance', '~> 4.0',  :require => false
 end
+
+group :release do
+  gem 'voxpupuli-release', '~> 5.0',  :require => false
+end
+
+gem 'rake', :require => false
+
+gem 'openvox', ENV.fetch('OPENVOX_GEM_VERSION', [">= 7", "< 9"]), :require => false, :groups => [:test]
+
+# vim: syntax=ruby

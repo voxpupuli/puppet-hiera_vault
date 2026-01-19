@@ -46,9 +46,7 @@ describe FakeFunction do
 
   describe '#lookup_key' do
     context 'accessing vault' do
-
       context 'when vault is unsealed' do
-
         context 'configuring vault' do
           let :context do
             ctx = instance_double('Puppet::LookupContext')
@@ -64,7 +62,7 @@ describe FakeFunction do
             ctx
           end
 
-          it 'should throw error when file token is not valid and strict_mode is set to true' do
+          it 'throws error when file token is not valid and strict_mode is set to true' do
             vault_token_tmpfile = Tempfile.open('w')
             vault_token_tmpfile.puts('not-valid-token')
             vault_token_tmpfile.close
@@ -83,7 +81,7 @@ describe FakeFunction do
             expectation.to_not output(/strict_mode is true so raising as error/).to_stdout
           end
 
-          it 'should not throw error when file token is not valid and strict_mode is not set' do
+          it 'does not throw error when file token is not valid and strict_mode is not set' do
             vault_token_tmpfile = Tempfile.open('w')
             vault_token_tmpfile.puts('not-valid-token')
             vault_token_tmpfile.close
@@ -93,7 +91,6 @@ describe FakeFunction do
             expectation.to_not output(/strict_mode is true so raising as error/).to_stdout
           end
         end
-
       end
     end
   end
