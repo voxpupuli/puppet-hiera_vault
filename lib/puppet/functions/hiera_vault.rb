@@ -290,9 +290,7 @@ Puppet::Functions.create_function(:hiera_vault) do
       return context.not_found
     end
 
-    if vault_token(options).nil?
-      raise ArgumentError, '[hiera-vault] no token set in options and no token in VAULT_TOKEN'
-    end
+    raise ArgumentError, '[hiera-vault] no token set in options and no token in VAULT_TOKEN' if vault_token(options).nil?
 
     raise ArgumentError, '[hiera-vault] generic is no longer valid - change to kv' if options['mounts']['generic']
 
@@ -351,9 +349,7 @@ Puppet::Functions.create_function(:hiera_vault) do
   def with_vault_connection(options, context)
     $hiera_vault_mutex.synchronize do
       # If our Vault client has got cleaned up by a previous shutdown call, reinstate it
-      if $hiera_vault_client.nil?
-        $hiera_vault_client = Vault::Client.new
-      end
+      $hiera_vault_client = Vault::Client.new if $hiera_vault_client.nil?
 
       begin
         $hiera_vault_client.configure do |config|
@@ -366,9 +362,7 @@ Puppet::Functions.create_function(:hiera_vault) do
           config.ssl_ciphers = options['ssl_ciphers'] if config.respond_to? :ssl_ciphers
         end
 
-        if $hiera_vault_client.sys.seal_status.sealed?
-          raise Puppet::DataBinding::LookupError, "[hiera-vault] vault is sealed"
-        end
+        raise Puppet::DataBinding::LookupError, '[hiera-vault] vault is sealed' if $hiera_vault_client.sys.seal_status.sealed?
 
         context.explain { "[hiera-vault] Client configured to connect to #{$hiera_vault_client.address}" }
       rescue StandardError => e
