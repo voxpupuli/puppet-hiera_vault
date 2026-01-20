@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 require 'support/vault_server'
 require 'puppet/functions/hiera_vault'
