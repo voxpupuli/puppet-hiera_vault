@@ -47,24 +47,21 @@ describe FakeFunction do
   describe '#lookup_key' do
     context 'accessing vault' do
       context 'supplied with invalid parameters' do
-
-        it 'should error when convert_paths_to_resources is no array' do
-          expect { function.lookup_key('test_key', { 'convert_paths_to_resources' => '^vault.*$' }, context) }
-            .to raise_error(ArgumentError, '[hiera-vault] convert_paths_to_resources must be an array')
+        it 'throws an error when convert_paths_to_resources is no array' do
+          expect { function.lookup_key('test_key', { 'convert_paths_to_resources' => '^vault.*$' }, context) }.to
+            raise_error(ArgumentError, '[hiera-vault] convert_paths_to_resources must be an array')
         end
 
-        it 'should error when passing invalid regexes to convert_paths_to_resources' do
-          expect { function.lookup_key('test_key', { 'convert_paths_to_resources' => ['['] }, context) }
-            .to raise_error(Puppet::DataBinding::LookupError, '[hiera-vault] creating regexp for convert_paths_to_resources failed with: premature end of char-class: /[/')
+        it 'throws an error when passing invalid regexes to convert_paths_to_resources' do
+          expect { function.lookup_key('test_key', { 'convert_paths_to_resources' => ['['] }, context) }.to
+            raise_error(Puppet::DataBinding::LookupError, '[hiera-vault] creating regexp for convert_paths_to_resources failed with: premature end of char-class: /[/')
         end
-
       end
     end
   end
 
   describe '#lookup_key with ' do
     context 'accessing vault with v2 path' do
-
       context 'when vault is unsealed' do
         before(:context) do
           vault_test_client.sys.mount('puppet_resource', 'kv', 'puppet secrets for resources', { "options" => {"version": "2" }})

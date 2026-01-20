@@ -170,9 +170,9 @@ Puppet::Functions.create_function(:hiera_vault) do
             context.explain { msg }
             raise Puppet::DataBinding::LookupError, msg
           rescue Vault::HTTPError => e
-              msg = "[hiera-vault] Could not read secret #{secretpath}: #{e.errors.join("\n").rstrip}"
-              context.explain { msg }
-              raise Puppet::DataBinding::LookupError, "#{msg} - (strict_mode is true so raising as error)" if strict_mode
+            msg = "[hiera-vault] Could not read secret #{secretpath}: #{e.errors.join("\n").rstrip}"
+            context.explain { msg }
+            raise Puppet::DataBinding::LookupError, "#{msg} - (strict_mode is true so raising as error)" if strict_mode
           end
 
           next if secret.nil?
