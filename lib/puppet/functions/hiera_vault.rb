@@ -124,14 +124,14 @@ Puppet::Functions.create_function(:hiera_vault) do
   end
 
   def vault_get_value(key, options, context)
-    if ! ['string','json',nil].include?(options['default_field_parse'])
+    unless ['string', 'json', nil].include?(options['default_field_parse'])
       raise ArgumentError, "[hiera-vault] invalid value for default_field_parse: '#{options['default_field_parse']}', should be one of 'string','json'"
     end
 
     raise ArgumentError, "[hiera-vault] invalid value for cache_for: '#{options['cache_for']}', should be a number or nil" if !options['cache_for'].nil? && (!options['cache_for'].is_a? Numeric)
 
     cached_value = $cache.get(key, options)
-    return cached_value.value if ! cached_value.nil?
+    return cached_value.value unless cached_value.nil?
 
     with_vault_connection(options, context) do
       answer = nil
@@ -149,7 +149,7 @@ Puppet::Functions.create_function(:hiera_vault) do
           secret = nil
 
           paths = []
-          if options.fetch("v2_guess_mount", true)
+          if options.fetch('v2_guess_mount', true)
             paths << [:v2, File.join(mount, path, 'data', key).chomp('/')]
             paths << [:v2, File.join(mount, 'data', path, key).chomp('/')]
           else
