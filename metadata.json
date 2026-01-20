@@ -1,6 +1,6 @@
 {
   "name": "puppet-hiera_vault",
-  "version": "3.0.0",
+  "version": "3.0.1-rc0",
   "author": "Vox Pupuli",
   "summary": "Hiera 5 backend to query data lookups from vault",
   "license": "Apache-2.0",
