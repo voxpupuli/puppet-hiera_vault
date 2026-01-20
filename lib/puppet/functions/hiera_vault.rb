@@ -160,11 +160,11 @@ Puppet::Functions.create_function(:hiera_vault) do
           paths << [:v1, File.join(mount, path, key)] if options.fetch('v1_lookup', true)
 
           paths.each do |version_path|
-            begin
-              version, path = version_path[0], version_path[1]
-              context.explain { "[hiera-vault] Checking path: #{path}" }
-              response = $hiera_vault_client.logical.read(path)
-              next if response.nil?
+            version = version_path[0]
+            path = version_path[1]
+            context.explain { "[hiera-vault] Checking path: #{path}" }
+            response = $hiera_vault_client.logical.read(path)
+            next if response.nil?
 
               secret = version == :v1 ? response.data : response.data[:data]
             rescue Vault::HTTPConnectionError
