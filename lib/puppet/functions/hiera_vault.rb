@@ -124,9 +124,7 @@ Puppet::Functions.create_function(:hiera_vault) do
   end
 
   def vault_get_value(key, options, context)
-    unless ['string', 'json', nil].include?(options['default_field_parse'])
-      raise ArgumentError, "[hiera-vault] invalid value for default_field_parse: '#{options['default_field_parse']}', should be one of 'string','json'"
-    end
+    raise ArgumentError, "[hiera-vault] invalid value for default_field_parse: '#{options['default_field_parse']}', should be one of 'string','json'" unless ['string', 'json', nil].include?(options['default_field_parse'])
 
     raise ArgumentError, "[hiera-vault] invalid value for cache_for: '#{options['cache_for']}', should be a number or nil" if !options['cache_for'].nil? && (!options['cache_for'].is_a? Numeric)
 
