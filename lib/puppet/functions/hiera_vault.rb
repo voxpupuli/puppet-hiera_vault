@@ -166,12 +166,12 @@ Puppet::Functions.create_function(:hiera_vault) do
             response = $hiera_vault_client.logical.read(path)
             next if response.nil?
 
-              secret = version == :v1 ? response.data : response.data[:data]
-            rescue Vault::HTTPConnectionError
-              msg = "[hiera-vault] Could not connect to read secret: #{secretpath}"
-              context.explain { msg }
-              raise Puppet::DataBinding::LookupError, msg
-            rescue Vault::HTTPError => e
+            secret = version == :v1 ? response.data : response.data[:data]
+          rescue Vault::HTTPConnectionError
+            msg = "[hiera-vault] Could not connect to read secret: #{secretpath}"
+            context.explain { msg }
+            raise Puppet::DataBinding::LookupError, msg
+          rescue Vault::HTTPError => e
               msg = "[hiera-vault] Could not read secret #{secretpath}: #{e.errors.join("\n").rstrip}"
               context.explain { msg }
               raise Puppet::DataBinding::LookupError, "#{msg} - (strict_mode is true so raising as error)" if strict_mode
@@ -230,7 +230,7 @@ Puppet::Functions.create_function(:hiera_vault) do
           context.explain { "[hiera-vault] Looking in path #{full_path} for resources" }
           resources = vault_list_path(full_path, context)
           resources.each do |resource|
-            resource = resource.tr('/','')
+            resource = resource.tr('/', '')
             resource_path = "#{full_path}/#{resource}"
             found_resources[resource] = vault_read_resource(resource_path, context)
           end
@@ -239,7 +239,7 @@ Puppet::Functions.create_function(:hiera_vault) do
     end
     raise Puppet::DataBinding::LookupError, "[hiera-vault] Could not find resources for #{key} - (strict_mode is true so raising as error)" if found_resources.empty? && strict_mode
 
-    context.not_found if found_resources.empty? 
+    context.not_found if found_resources.empty?
     $hiera_vault_shutdown.call
 
     found_resources.empty? ? nil : found_resources
