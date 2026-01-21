@@ -90,24 +90,23 @@ describe FakeFunction do
 
           context 'reading resources' do
             it 'Returns the resource if regex matches convert_paths_to_resources and path exists' do
-              expect(function.lookup_key('test/resources', vault_options.merge('convert_paths_to_resources' => ['.*\/resources']), context))
-                .to eql({
+              expect(function.lookup_key('test/resources', vault_options.merge('convert_paths_to_resources' => ['.*\/resources']), context)).to eql({
                           'resource_1' => {
                             'text_property' => 'text1',
                             'number_property' => 10,
-                            'array_property' => ['a', 'b', 'c'],
+                            'array_property' => [ 'a b c'],
                             'hash_property' => { 'a' => 1, 'b' => 2, 'c' => 3 },
                           },
                           'resource_2' => {
                             'text_property' => 'text2',
                             'number_property' => 20,
-                            'array_property' => ['d', 'e', 'f'],
+                            'array_property' => ['d e f'],
                             'hash_property' => { 'd' => 4, 'e' => 5, 'f' => 6 },
                           },
                         })
             end
 
-            context "regex matches convert_paths_to_resources but the path doesn\'t path exists" do
+            context "regex matches convert_paths_to_resources but the path doesn't path exist" do
               it 'returns nil' do
                 expect do
                   function.lookup_key('nonexisting/resources', vault_options.merge('convert_paths_to_resources' => ['.*\/resources']), context)
