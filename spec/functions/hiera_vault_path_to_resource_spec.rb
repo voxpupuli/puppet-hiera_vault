@@ -89,7 +89,7 @@ describe FakeFunction do
           end
 
           context 'reading resources' do
-            it 'should return the resource if regex matches convert_paths_to_resources and path exists' do
+            it 'Returns the resource if regex matches convert_paths_to_resources and path exists' do
               expect(function.lookup_key('test/resources', vault_options.merge('convert_paths_to_resources' => ['.*\/resources']), context))
                 .to eql({
                           'resource_1' => {
@@ -108,18 +108,18 @@ describe FakeFunction do
             end
 
             context "regex matches convert_paths_to_resources but the path doesn\'t path exists" do
-              it 'should return nil' do
+              it 'returns nil' do
                 expect(function.lookup_key('nonexisting/resources', vault_options.merge('convert_paths_to_resources' => ['.*\/resources']), context))
                   .to be_nil
               end
 
-              it 'should throw error when strict_mode is set to true' do
+              it 'throws error when strict_mode is set to true' do
                 expect { function.lookup_key('nonexisting/resources', vault_options.merge('convert_paths_to_resources' => ['.*\/resources'], 'strict_mode' => true), context) }
                   .to raise_error(Puppet::DataBinding::LookupError, '[hiera-vault] Could not find resources for nonexisting/resources - (strict_mode is true so raising as error)')
               end
             end
 
-            it 'should not return the resource if regex does not match convert_paths_to_resources' do
+            it 'does not return the resource if regex does not match convert_paths_to_resources' do
               expect(context).to receive(:not_found)
               expect(function.lookup_key('blahblah', vault_options.merge('convert_paths_to_resources' => ['.*\/resources']), context))
                 .to be_nil
