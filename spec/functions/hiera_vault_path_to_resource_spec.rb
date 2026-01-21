@@ -56,20 +56,21 @@ describe FakeFunction do
         end
 
         it 'throws an error when passing invalid regexes to convert_paths_to_resources' do
-          expect { function.lookup_key('test_key', { 'convert_paths_to_resources' => ['['] }, context) }.to
-            raise_error(Puppet::DataBinding::LookupError, '[hiera-vault] creating regexp for convert_paths_to_resources failed with: premature end of char-class: /[/')
+          expect do
+            function.lookup_key('test_key', { 'convert_paths_to_resources' => ['['] }, context)
+          end.to raise_error(Puppet::DataBinding::LookupError, '[hiera-vault] creating regexp for convert_paths_to_resources failed with: premature end of char-class: /[/')
         end
       end
     end
   end
 
-  describe '#lookup_key with ' do
+  describe '#lookup_key with' do
     context 'accessing vault with v2 path' do
       context 'when vault is unsealed' do
-        before(:each) do
-          vault_test_client.sys.mount('puppet_resource', 'kv', 'puppet secrets for resources', { 'options' => { 'version': '2' } })
-          vault_test_client.logical.write('puppet_resource/data/common/test/resources/resource_1', { 'data' => { :number_property => 10, :array_property => $w[ 'a' 'b' 'c' ], :hash_property => { a: 1, b: 2, c: 3 }, :text_property => 'text1' } })
-          vault_test_client.logical.write('puppet_resource/data/common/test/resources/resource_2', { 'data' => { :number_property => 20, :array_property => $w[ 'd' 'e' 'f' ], :hash_property => { d: 4, e: 5, f: 6 }, :text_property => 'text2' } })
+        before do
+          vault_test_client.sys.mount('puppet_resource', 'kv', 'puppet secrets for resources', { 'options': { version: '2' } })
+          vault_test_client.logical.write('puppet_resource/data/common/test/resources/resource_1', { 'data': { number_property: 10, array_property: $w['a b c'], hash_property: { a: 1, b: 2, c: 3 }, text_property: 'text1' } })
+          vault_test_client.logical.write('puppet_resource/data/common/test/resources/resource_2', { 'data': { number_property: 20, array_property: $w['d e f'], hash_property: { d: 4, e: 5, f: 6 }, text_property: 'text2' } })
         end
 
         context 'configuring vault' do
