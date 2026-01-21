@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 require 'support/vault_server'
 require 'puppet/functions/hiera_vault'
@@ -63,23 +65,27 @@ describe FakeFunction do
         end
 
         it 'errors when passing invalid regexes' do
-          expect { function.lookup_key('test_key', { 'confine_to_keys' => ['['] }, context) }.
-            to raise_error(Puppet::DataBinding::LookupError, '[hiera-vault] creating regexp failed with: premature end of char-class: /[/')
+          do expect
+            function.lookup_key('test_key', { 'confine_to_keys' => ['['] }, context)
+          end.to raise_error(Puppet::DataBinding::LookupError, '[hiera-vault] creating regexp for confine_to_keys failed with: premature end of char-class: /[/')
         end
 
         it 'errors when passing invalid regexes' do
-          expect { function.lookup_key('test_key', { 'confine_to_keys' => ['['] }, context) }.
-            to raise_error(Puppet::DataBinding::LookupError, '[hiera-vault] creating regexp failed with: premature end of char-class: /[/')
+          do expect
+            function.lookup_key('test_key', { 'confine_to_keys' => ['['] }, context) }
+          end.to raise_error(Puppet::DataBinding::LookupError, '[hiera-vault] creating regexp for confine_to_keys failed with: premature end of char-class: /[/')
         end
 
         it 'errors when strip_from_keys isnst an array' do
-          expect { function.lookup_key('test_key', vault_options.merge('strip_from_keys' => 'Not an array'), context) }.
-            to raise_error(ArgumentError, '[hiera-vault] strip_from_keys must be an array')
+          do expect
+            function.lookup_key('test_key', vault_options.merge('strip_from_keys' => 'Not an array'), context)
+          end.to raise_error(ArgumentError, '[hiera-vault] strip_from_keys must be an array')
         end
 
         it 'errors when no token present and no VAULT_TOKEN env set' do
-          expect { function.lookup_key('test_key', vault_options.delete('token'), context) }.
-            to raise_error(ArgumentError, '[hiera-vault] no token set in options and no token in VAULT_TOKEN')
+          expect do
+            function.lookup_key('test_key', vault_options.delete('token'), context)
+          end.to raise_error(ArgumentError, '[hiera-vault] no token set in options and no token in VAULT_TOKEN')
         end
       end
 
@@ -103,8 +109,9 @@ describe FakeFunction do
             vault_token_tmpfile = Tempfile.open('w')
             vault_token_tmpfile.puts('not-valid-token')
             vault_token_tmpfile.close
-            expect { function.lookup_key('test_key', vault_options.merge({ 'token' => vault_token_tmpfile.path }), context) }.
-              to output(%r{Could not read secret .+ permission denied}m).to_stdout
+            expect do
+              function.lookup_key('test_key', vault_options.merge({ 'token' => vault_token_tmpfile.path }), context)
+            end.to output(%r{Could not read secret puppet/common:.*permission denied.*invalid token}m).to_stdout
           end
         end
       end

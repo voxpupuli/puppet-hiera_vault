@@ -98,6 +98,7 @@ Puppet::Functions.create_function(:hiera_vault) do
     param 'Variant[String, Numeric]', :key
     param 'Hash', :options
     param 'Puppet::LookupContext', :context
+    return_type 'Any'
   end
 
   $cache = Cache.new
@@ -122,87 +123,17 @@ Puppet::Functions.create_function(:hiera_vault) do
     token
   end
 
-  def lookup_key(key, options, context)
-    if confine_keys = options['confine_to_keys']
-      raise ArgumentError, '[hiera-vault] confine_to_keys must be an array' unless confine_keys.is_a?(Array)
-
-      begin
-        confine_keys = confine_keys.map { |r| Regexp.new(r) }
-      rescue StandardError => e
-        raise Puppet::DataBinding::LookupError, "[hiera-vault] creating regexp failed with: #{e}"
-      end
-
-      regex_key_match = Regexp.union(confine_keys)
-
-      unless key[regex_key_match] == key
-        context.explain { "[hiera-vault] Skipping hiera_vault backend because key '#{key}' does not match confine_to_keys" }
-        context.not_found
-      end
-    end
-
-    if strip_from_keys = options['strip_from_keys']
-      raise ArgumentError, '[hiera-vault] strip_from_keys must be an array' unless strip_from_keys.is_a?(Array)
-
-      strip_from_keys.each do |prefix|
-        key = key.gsub(Regexp.new(prefix), '')
-      end
-    end
-
-    if vault_token(options) == 'IGNORE-VAULT'
-      context.explain { '[hiera-vault] token set to IGNORE-VAULT - Quitting early' }
-      return context.not_found
-    end
-
-    raise ArgumentError, '[hiera-vault] no token set in options and no token in VAULT_TOKEN' if vault_token(options).nil?
-
-    result = vault_get(key, options, context)
-
-    # Allow hiera to look beyond vault if the value is not found
-    continue_if_not_found = options['continue_if_not_found'] || false
-
-    return result unless result.nil? and continue_if_not_found
-
-    context.not_found
-  end
-
-  def vault_get(key, options, context)
+  def vault_get_value(key, options, context)
     raise ArgumentError, "[hiera-vault] invalid value for default_field_parse: '#{options['default_field_parse']}', should be one of 'string','json'" unless ['string', 'json', nil].include?(options['default_field_parse'])
-
-    raise ArgumentError, "[hiera-vault] invalid value for default_field_behavior: '#{options['default_field_behavior']}', should be one of 'ignore','only'" unless ['ignore', 'only', nil].include?(options['default_field_behavior'])
 
     raise ArgumentError, "[hiera-vault] invalid value for cache_for: '#{options['cache_for']}', should be a number or nil" if !options['cache_for'].nil? && (!options['cache_for'].is_a? Numeric)
 
-    $hiera_vault_mutex.synchronize do
-      cached_value = $cache.get(key, options)
-      return cached_value.value unless cached_value.nil?
+    cached_value = $cache.get(key, options)
+    return cached_value.value unless cached_value.nil?
 
-      # If our Vault client has got cleaned up by a previous shutdown call, reinstate it
-      $hiera_vault_client = Vault::Client.new if $hiera_vault_client.nil?
-
-      begin
-        $hiera_vault_client.configure do |config|
-          config.address = options['address'] unless options['address'].nil?
-          config.token = vault_token(options)
-          config.ssl_pem_file = options['ssl_pem_file'] unless options['ssl_pem_file'].nil?
-          config.ssl_verify = options['ssl_verify'] unless options['ssl_verify'].nil?
-          config.ssl_ca_cert = options['ssl_ca_cert'] if config.respond_to? :ssl_ca_cert
-          config.ssl_ca_path = options['ssl_ca_path'] if config.respond_to? :ssl_ca_path
-          config.ssl_ciphers = options['ssl_ciphers'] if config.respond_to? :ssl_ciphers
-        end
-
-        raise Puppet::DataBinding::LookupError, '[hiera-vault] vault is sealed' if $hiera_vault_client.sys.seal_status.sealed?
-
-        context.explain { "[hiera-vault] Client configured to connect to #{$hiera_vault_client.address}" }
-      rescue StandardError => e
-        $hiera_vault_shutdown.call
-        $hiera_vault_client = nil
-        raise Puppet::DataBinding::LookupError, "[hiera-vault] Skipping backend. Configuration error: #{e}"
-      end
-
+    with_vault_connection(options, context) do
       answer = nil
       strict_mode = (options.key?('strict_mode') and options['strict_mode'])
-
-      raise ArgumentError, '[hiera-vault] generic is no longer valid - change to kv' if options['mounts']['generic']
 
       kv_mounts = options['mounts'].dup
 
@@ -216,7 +147,6 @@ Puppet::Functions.create_function(:hiera_vault) do
           secret = nil
 
           paths = []
-
           if options.fetch('v2_guess_mount', true)
             paths << [:v2, File.join(mount, path, 'data', key).chomp('/')]
             paths << [:v2, File.join(mount, 'data', path, key).chomp('/')]
@@ -256,16 +186,6 @@ Puppet::Functions.create_function(:hiera_vault) do
               return nil
             end
 
-            new_answer = secret[options['default_field'].to_sym]
-
-            if options['default_field_parse'] == 'json'
-              begin
-                new_answer = JSON.parse(new_answer, quirks_mode: true)
-              rescue JSON::ParserError => e
-                context.explain { "[hiera-vault] Could not parse string as json: #{e}" }
-              end
-            end
-
           else
             # Turn secret's hash keys into strings allow for nested arrays and hashes
             # this enables support for create resources etc
@@ -290,6 +210,166 @@ Puppet::Functions.create_function(:hiera_vault) do
 
       $cache.set(key, answer, options)
       return answer
+    end
+  end
+
+  def vault_get_resources(key, options, context)
+    strict_mode = (options.key?('strict_mode') and options['strict_mode'])
+    found_resources = {}
+    with_vault_connection(options, context) do
+      kv_mounts = options['mounts'].dup
+
+      # Only kv mounts supported so far
+      kv_mounts.each_pair do |mount, paths|
+        interpolate(context, paths).each do |path|
+          interpolated_mount = context.interpolate(mount)
+          full_path = "#{interpolated_mount}/#{path}/#{key}"
+
+          context.explain { "[hiera-vault] Looking in path #{full_path} for resources" }
+          resources = vault_list_path(full_path, context)
+          resources.each do |resource|
+            resource = resource.tr('/', '')
+            resource_path = "#{full_path}/#{resource}"
+            found_resources[resource] = vault_read_resource(resource_path, context)
+          end
+        end
+      end
+    end
+    raise Puppet::DataBinding::LookupError, "[hiera-vault] Could not find resources for #{key} - (strict_mode is true so raising as error)" if found_resources.empty? && strict_mode
+
+    context.not_found if found_resources.empty?
+    $hiera_vault_shutdown.call
+
+    found_resources.empty? ? nil : found_resources
+  end
+
+  def resource_path?(path, resource_paths)
+    path[resource_paths] == path
+  end
+
+  def lookup_key(key, options, context)
+    convert_paths_to_resources = options['convert_paths_to_resources'] || []
+    raise ArgumentError, '[hiera-vault] convert_paths_to_resources must be an array' unless convert_paths_to_resources.is_a?(Array)
+
+    begin
+      convert_paths_to_resources = convert_paths_to_resources.map { |r| Regexp.new(r) }
+    rescue StandardError => e
+      raise Puppet::DataBinding::LookupError, "[hiera-vault] creating regexp for convert_paths_to_resources failed with: #{e}"
+    end
+    convert_paths_to_resources_match = Regexp.union(convert_paths_to_resources)
+
+    if confine_keys = options['confine_to_keys']
+      raise ArgumentError, '[hiera-vault] confine_to_keys must be an array' unless confine_keys.is_a?(Array)
+
+      begin
+        confine_keys = confine_keys.map { |r| Regexp.new(r) }
+      rescue StandardError => e
+        raise Puppet::DataBinding::LookupError, "[hiera-vault] creating regexp for confine_to_keys failed with: #{e}"
+      end
+
+      regex_key_match = Regexp.union(confine_keys)
+
+      unless key[regex_key_match] == key
+        context.explain { "[hiera-vault] Skipping hiera_vault backend because key '#{key}' does not match confine_to_keys" }
+        context.not_found
+      end
+    end
+
+    if strip_from_keys = options['strip_from_keys']
+      raise ArgumentError, '[hiera-vault] strip_from_keys must be an array' unless strip_from_keys.is_a?(Array)
+
+      strip_from_keys.each do |prefix|
+        key = key.gsub(Regexp.new(prefix), '')
+      end
+    end
+
+    if vault_token(options) == 'IGNORE-VAULT'
+      context.explain { '[hiera-vault] token set to IGNORE-VAULT - Quitting early' }
+      return context.not_found
+    end
+
+    raise ArgumentError, '[hiera-vault] no token set in options and no token in VAULT_TOKEN' if vault_token(options).nil?
+
+    raise ArgumentError, '[hiera-vault] generic is no longer valid - change to kv' if options['mounts']['generic']
+
+    result = if resource_path?(key, convert_paths_to_resources_match)
+               vault_get_resources(key, options, context)
+             else
+               vault_get_value(key, options, context)
+             end
+
+    # Allow hiera to look beyond vault if the value is not found
+    continue_if_not_found = options['continue_if_not_found'] || false
+
+    if result.nil? && continue_if_not_found
+      context.not_found
+    else
+      result
+    end
+  end
+
+  def vault_list_path(full_path, context)
+    mount = full_path.split('/').first
+    path  = full_path.gsub("#{mount}/", '')
+
+    begin
+      list = $hiera_vault_client.kv(mount).list(path)
+    rescue Vault::HTTPConnectionError
+      msg = "[hiera-vault] Could not connect to read path: #{full_path}"
+      context.explain { msg }
+      raise Puppet::DataBinding::LookupError, msg
+    rescue Vault::HTTPError => e
+      msg = "[hiera-vault] Could list path #{full_path}: #{e.errors.join("\n").rstrip}"
+      context.explain { msg }
+    end
+  end
+
+  def vault_read_resource(full_path, context)
+    mount = full_path.split('/').first
+    path  = full_path.gsub("#{mount}/", '')
+    path  = path.gsub('//', '/')
+
+    begin
+      value = $hiera_vault_client.kv(mount).read(path)
+    rescue Vault::HTTPConnectionError
+      msg = "[hiera-vault] Could not connect to read path: #{full_path}"
+      context.explain { msg }
+      raise Puppet::DataBinding::LookupError, msg
+    rescue Vault::HTTPError => e
+      msg = "[hiera-vault] Could not read from path #{full_path}: #{e.errors.join("\n").rstrip}"
+      context.explain { msg }
+    end
+    return nil if value.nil?
+
+    stringify_keys(value.data)
+  end
+
+  def with_vault_connection(options, context)
+    $hiera_vault_mutex.synchronize do
+      # If our Vault client has got cleaned up by a previous shutdown call, reinstate it
+      $hiera_vault_client = Vault::Client.new if $hiera_vault_client.nil?
+
+      begin
+        $hiera_vault_client.configure do |config|
+          config.address = options['address'] unless options['address'].nil?
+          config.token = vault_token(options)
+          config.ssl_pem_file = options['ssl_pem_file'] unless options['ssl_pem_file'].nil?
+          config.ssl_verify = options['ssl_verify'] unless options['ssl_verify'].nil?
+          config.ssl_ca_cert = options['ssl_ca_cert'] if config.respond_to? :ssl_ca_cert
+          config.ssl_ca_path = options['ssl_ca_path'] if config.respond_to? :ssl_ca_path
+          config.ssl_ciphers = options['ssl_ciphers'] if config.respond_to? :ssl_ciphers
+        end
+
+        raise Puppet::DataBinding::LookupError, '[hiera-vault] vault is sealed' if $hiera_vault_client.sys.seal_status.sealed?
+
+        context.explain { "[hiera-vault] Client configured to connect to #{$hiera_vault_client.address}" }
+      rescue StandardError => e
+        $hiera_vault_shutdown.call
+        $hiera_vault_client = nil
+        raise Puppet::DataBinding::LookupError, "[hiera-vault] Skipping backend. Configuration error: #{e}"
+      end
+
+      yield
     end
   end
 
