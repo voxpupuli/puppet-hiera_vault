@@ -243,38 +243,9 @@ would result in following lookups:
 - http://vault.foobar.com:8200/some_secret/data/foo.example.com/cool_key (for v2)
 - http://vault.foobar.com:8200/some_secret/data/common/cool_key (for v2)
 
-#### Multiple keys in trusted certname
-
-Often you want to whitelist multiple paths for each host (e.g. due to host having multiple roles). In this case simply add keys delimited with comma to trusted field. For example:
-
-```yaml
-mounts:
-  secret:
-    - "%{trusted.extensions.pp_role}"
-```
-
-and host configured with
-
-```yaml
----
-extension_requests:
-  pp_role: api,ssl
-```
-
-would result in lookups in:
-
-- http://vault.foobar.com:8200/secret/api/cool_key (for v1)
-- http://vault.foobar.com:8200/secret/api/data/cool_key (for v2)
-- http://vault.foobar.com:8200/secret/data/api/cool_key (for v2)
-- http://vault.foobar.com:8200/secret/ssl/cool_key (for v1)
-- http://vault.foobar.com:8200/secret/ssl/data/cool_key (for v2)
-- http://vault.foobar.com:8200/secret/data/ssl/cool_key (for v2)
-
 #### More verbose paths in Hiera
 
 Often implicit path extension makes it hard to understand which exact paths are used for given host - as you need to inspect both Hiera and trusted field for each host.
-
-With above configuration and lookup `$cool_key = lookup({"name" => "cool_key"})` you cannot be sure whether `api/cool_key` or `ssl/cool_key` will be used (whichever happens to be first in lookup list).
 
 To alleviate this problem you can use full paths in Hiera, provided `v2_guess_mount: false` configuration is active. For example with:
 
