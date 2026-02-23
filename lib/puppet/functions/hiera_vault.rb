@@ -230,9 +230,7 @@ Puppet::Functions.create_function(:hiera_vault) do
 
           resources = [] if resources.nil?
 
-          if resources.empty?
-            next
-          end
+          next if resources.empty?
 
           resources.each do |resource|
             resource = resource.tr('/', '')
@@ -328,12 +326,13 @@ Puppet::Functions.create_function(:hiera_vault) do
     begin
       raw = $hiera_vault_client.kv(mount).list(path)
       # Vault gem may return Array or Vault::Secret with data[:keys]; normalize to array
+      keys =
       if raw.respond_to?(:data) && raw.data.is_a?(Hash) && raw.data[:keys]
-        keys = raw.data[:keys]
+        raw.data[:keys]
       elsif raw.is_a?(Array)
-        keys = raw
+        raw
       else
-        keys = []
+        []
       end
     rescue Vault::HTTPConnectionError
       msg = "[hiera-vault] Could not connect to read path: #{full_path}"
