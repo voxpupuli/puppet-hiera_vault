@@ -227,6 +227,13 @@ Puppet::Functions.create_function(:hiera_vault) do
 
           context.explain { "[hiera-vault] Looking in path #{full_path} for resources" }
           resources = vault_list_path(full_path, context)
+
+          resources = [] if resources.nil?
+
+          if resources.empty?
+            next  # Ga door naar volgende path
+          end
+
           resources.each do |resource|
             resource = resource.tr('/', '')
             resource_path = "#{full_path}/#{resource}"
@@ -271,7 +278,8 @@ Puppet::Functions.create_function(:hiera_vault) do
 
       unless key[regex_key_match] == key
         context.explain { "[hiera-vault] Skipping hiera_vault backend because key '#{key}' does not match confine_to_keys" }
-        context.not_found
+        # Key does not match confine_to_keys; signal not_found so Hiera can try other backends.
+        return context.not_found
       end
     end
 
@@ -308,12 +316,25 @@ Puppet::Functions.create_function(:hiera_vault) do
     end
   end
 
+  # Lists child keys (resources) under a Vault KV path. Always returns an array so callers
+  # can safely .each; returns [] when the path is empty or on HTTPError so vault_get_resources
+  # can try the next path in the hierarchy.
+  # Normalizes different Vault gem response formats (Vault::Secret with data[:keys] vs Array).
   def vault_list_path(full_path, context)
     mount = full_path.split('/').first
     path  = full_path.gsub("#{mount}/", '')
-
+    path  = path.gsub('//', '/')  # avoid double slashes from path interpolation
+    keys = []
     begin
-      list = $hiera_vault_client.kv(mount).list(path)
+      raw = $hiera_vault_client.kv(mount).list(path)
+      # Vault gem may return Array or Vault::Secret with data[:keys]; normalize to array
+      if raw.respond_to?(:data) && raw.data.is_a?(Hash) && raw.data[:keys]
+        keys = raw.data[:keys]
+      elsif raw.is_a?(Array)
+        keys = raw
+      else
+        keys = []
+      end
     rescue Vault::HTTPConnectionError
       msg = "[hiera-vault] Could not connect to read path: #{full_path}"
       context.explain { msg }
@@ -321,7 +342,9 @@ Puppet::Functions.create_function(:hiera_vault) do
     rescue Vault::HTTPError => e
       msg = "[hiera-vault] Could list path #{full_path}: #{e.errors.join("\n").rstrip}"
       context.explain { msg }
+      keys = []  # allow caller to try next path instead of failing
     end
+    keys
   end
 
   def vault_read_resource(full_path, context)
@@ -329,6 +352,7 @@ Puppet::Functions.create_function(:hiera_vault) do
     path  = full_path.gsub("#{mount}/", '')
     path  = path.gsub('//', '/')
 
+    value = nil
     begin
       value = $hiera_vault_client.kv(mount).read(path)
     rescue Vault::HTTPConnectionError
