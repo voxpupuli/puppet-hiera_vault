@@ -231,7 +231,7 @@ Puppet::Functions.create_function(:hiera_vault) do
           resources = [] if resources.nil?
 
           if resources.empty?
-            next  # Ga door naar volgende path
+            next
           end
 
           resources.each do |resource|
@@ -323,7 +323,7 @@ Puppet::Functions.create_function(:hiera_vault) do
   def vault_list_path(full_path, context)
     mount = full_path.split('/').first
     path  = full_path.gsub("#{mount}/", '')
-    path  = path.gsub('//', '/')  # avoid double slashes from path interpolation
+    path  = path.gsub('//', '/')
     keys = []
     begin
       raw = $hiera_vault_client.kv(mount).list(path)
@@ -342,7 +342,7 @@ Puppet::Functions.create_function(:hiera_vault) do
     rescue Vault::HTTPError => e
       msg = "[hiera-vault] Could list path #{full_path}: #{e.errors.join("\n").rstrip}"
       context.explain { msg }
-      keys = []  # allow caller to try next path instead of failing
+      keys = []
     end
     keys
   end
