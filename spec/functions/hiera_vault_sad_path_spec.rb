@@ -65,21 +65,13 @@ describe FakeFunction do
         end
 
         it 'errors when passing invalid regexes' do
-          do expect
-            function.lookup_key('test_key', { 'confine_to_keys' => ['['] }, context)
-          end.to raise_error(Puppet::DataBinding::LookupError, '[hiera-vault] creating regexp for confine_to_keys failed with: premature end of char-class: /[/')
-        end
-
-        it 'errors when passing invalid regexes' do
-          do expect
-            function.lookup_key('test_key', { 'confine_to_keys' => ['['] }, context) }
-          end.to raise_error(Puppet::DataBinding::LookupError, '[hiera-vault] creating regexp for confine_to_keys failed with: premature end of char-class: /[/')
+          expect { function.lookup_key('test_key', { 'confine_to_keys' => ['['] }, context) }.
+            to raise_error(Puppet::DataBinding::LookupError, '[hiera-vault] creating regexp for confine_to_keys failed with: premature end of char-class: /[/')
         end
 
         it 'errors when strip_from_keys isnst an array' do
-          do expect
-            function.lookup_key('test_key', vault_options.merge('strip_from_keys' => 'Not an array'), context)
-          end.to raise_error(ArgumentError, '[hiera-vault] strip_from_keys must be an array')
+          expect { function.lookup_key('test_key', vault_options.merge('strip_from_keys' => 'Not an array'), context) }.
+            to raise_error(ArgumentError, '[hiera-vault] strip_from_keys must be an array')
         end
 
         it 'errors when no token present and no VAULT_TOKEN env set' do
