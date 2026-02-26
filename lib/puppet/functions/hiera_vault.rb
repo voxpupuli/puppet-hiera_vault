@@ -197,9 +197,10 @@ Puppet::Functions.create_function(:hiera_vault) do
 
             new_answer = secret[options['default_field'].to_sym]
             if options['default_field_parse'] == 'json'
-              begin
-                new_answer = JSON.parse(new_answer.to_s)
-              rescue JSON::ParserError
+              new_answer = begin
+                JSON.parse(new_answer.to_s)
+              rescue JSON::ParserError => _e
+                new_answer
               end
               new_answer = stringify_keys(new_answer) if new_answer.is_a?(Hash)
             end

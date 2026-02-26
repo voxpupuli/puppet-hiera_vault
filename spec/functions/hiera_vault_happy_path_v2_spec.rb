@@ -38,7 +38,7 @@ describe FakeFunction do
       }
     }
   end
-  
+
   def vault_test_client
     Vault::Client.new(
       address: RSpec::VaultServer.address,
