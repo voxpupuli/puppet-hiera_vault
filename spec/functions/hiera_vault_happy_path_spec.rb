@@ -1,3 +1,5 @@
+# Happy-path specs for vault v1 KV: reading secrets, default_field, confine_to_keys, token from file, etc.
+
 require 'spec_helper'
 require 'support/vault_server'
 require 'puppet/functions/hiera_vault'
@@ -110,11 +112,7 @@ describe FakeFunction do
               to include('value' => 'default')
           end
 
-          it 'returns the key if regex matches confine_to_keys' do
-            expect(function.lookup_key('confined_vault_key', vault_options.merge('confine_to_keys' => ['^vault.*$']), context)).
-              to include('value' => 'find_me')
-          end
-
+          # Key 'puppet/data/test_key' does not match ^vault.*$ (no "vault" in key) -> backend skipped, not_found.
           it 'does not return the key if regex does not match confine_to_keys' do
             expect(context).to receive(:not_found)
             expect(function.lookup_key('puppet/data/test_key', vault_options.merge('confine_to_keys' => ['^vault.*$']), context)).

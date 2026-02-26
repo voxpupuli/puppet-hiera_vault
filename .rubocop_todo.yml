@@ -46,6 +46,8 @@ RSpec/BeforeAfterAll:
     - 'spec/functions/hiera_vault_happy_path_v2_spec.rb'
     - 'spec/functions/hiera_vault_path_interpolation_spec.rb'
     - 'spec/functions/hiera_vault_sealed_spec.rb'
+    - 'spec/functions/hiera_vault_path_to_resource_spec.rb'
+    - 'spec/functions/hiera_vault_sad_path_spec.rb'
 
 # Offense count: 10
 # Configuration parameters: .
