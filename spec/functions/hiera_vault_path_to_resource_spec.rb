@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# Specs for the "path as resource" feature: when the lookup key matches convert_paths_to_resources,
+# the backend lists the path in Vault and returns a hash of resources (one secret per child).
+
 require 'spec_helper'
 require 'support/vault_server'
 require 'puppet/functions/hiera_vault'
@@ -49,6 +52,7 @@ describe FakeFunction do
   describe '#lookup_key' do
     context 'accessing vault' do
       context 'supplied with invalid parameters' do
+        # convert_paths_to_resources must be an array of regex strings.
         it 'throws an error when convert_paths_to_resources is no array' do
           expect do
             function.lookup_key('test_key', { 'convert_paths_to_resources' => '^vault.*$' }, context)
@@ -67,7 +71,8 @@ describe FakeFunction do
   describe '#lookup_key with' do
     context 'accessing vault with v2 path' do
       context 'when vault is unsealed' do
-        before do
+        # before(:context) runs once for the whole context; mount and secrets are shared to avoid "path already in use".
+        before(:context) do
           vault_test_client.sys.mount('puppet_resource', 'kv', 'puppet secrets for resources', { options: { version: '2' } })
           vault_test_client.logical.write('puppet_resource/data/common/test/resources/resource_1', { data: { number_property: 10, array_property: ['a b c'], hash_property: { a: 1, b: 2, c: 3 }, text_property: 'text1' } })
           vault_test_client.logical.write('puppet_resource/data/common/test/resources/resource_2', { data: { number_property: 20, array_property: ['d e f'], hash_property: { d: 4, e: 5, f: 6 }, text_property: 'text2' } })
@@ -76,7 +81,7 @@ describe FakeFunction do
         context 'configuring vault' do
           let :context do
             ctx = instance_double('Puppet::LookupContext')
-            allow(ctx).to receive(:cache_has_key).and.return(false)
+            allow(ctx).to receive(:cache_has_key).and_return(false)
             allow(ctx).to receive(:explain) { |&block| puts(block.call) }
             allow(ctx).to receive(:not_found)
             allow(ctx).to receive(:cache).with(String, anything) do |_, val|
@@ -89,6 +94,7 @@ describe FakeFunction do
           end
 
           context 'reading resources' do
+            # Key 'test/resources' matches .*\/resources → vault_get_resources lists common/test/resources and returns resource_1, resource_2.
             it 'Returns the resource if regex matches convert_paths_to_resources and path exists' do
               expect(function.lookup_key('test/resources', vault_options.merge('convert_paths_to_resources' => ['.*\/resources']), context)).to eql({
                                                                                                                                                       'resource_1' => {
@@ -107,10 +113,9 @@ describe FakeFunction do
             end
 
             context "regex matches convert_paths_to_resources but the path doesn't path exist" do
+              # Path nonexisting/resources matches regex but has no children in Vault → not_found.
               it 'returns nil' do
-                expect do
-                  function.lookup_key('nonexisting/resources', vault_options.merge('convert_paths_to_resources' => ['.*\/resources']), context)
-                end.to be_nil
+                expect(function.lookup_key('nonexisting/resources', vault_options.merge('convert_paths_to_resources' => ['.*\/resources']), context)).to be_nil
               end
 
               it 'throws error when strict_mode is set to true' do
@@ -120,11 +125,10 @@ describe FakeFunction do
               end
             end
 
+            # Key 'test_key' does not match .*\/resources → normal single-value lookup (vault_get_value), not resources.
             it 'does not return the resource if regex does not match convert_paths_to_resources' do
               expect(context).to receive(:not_found)
-              expect do
-                function.lookup_key('blahblah', vault_options.merge('convert_paths_to_resources' => ['.*\/resources']), context)
-              end.to be_nil
+              expect(function.lookup_key('test_key', vault_options.merge('convert_paths_to_resources' => ['.*\/resources']), context)).to be_nil
             end
           end
         end
