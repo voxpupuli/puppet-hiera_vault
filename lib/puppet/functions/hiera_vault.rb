@@ -197,7 +197,10 @@ Puppet::Functions.create_function(:hiera_vault) do
 
             new_answer = secret[options['default_field'].to_sym]
             if options['default_field_parse'] == 'json'
-              new_answer = JSON.parse(new_answer.to_s) rescue new_answer
+              begin
+                new_answer = JSON.parse(new_answer.to_s)
+              rescue JSON::ParserError
+              end
               new_answer = stringify_keys(new_answer) if new_answer.is_a?(Hash)
             end
           else
@@ -319,7 +322,7 @@ Puppet::Functions.create_function(:hiera_vault) do
     # Deprecated mount name; user must migrate to 'kv' (or explicit mount names).
     raise ArgumentError, '[hiera-vault] generic is no longer valid - change to kv' if options['mounts']['generic']
 
-    # Route: key matching convert_paths_to_resources → list resources; else → single secret lookup.
+    # Route: key matching convert_paths_to_resources -> list resources; else -> single secret lookup.
     result = if resource_path?(key, convert_paths_to_resources_match)
                vault_get_resources(key, options, context)
              else

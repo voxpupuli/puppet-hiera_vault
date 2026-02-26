@@ -105,7 +105,7 @@ describe FakeFunction do
               to include('value' => 'default')
           end
 
-          # Key does not match ^vault.*$ → backend skipped, not_found.
+          # Key does not match ^vault.*$ -> backend skipped, not_found.
           it 'does not return the key if regex does not match confine_to_keys' do
             expect(context).to receive(:not_found)
             expect(function.lookup_key('puppet/data/test_key', vault_options.merge('confine_to_keys' => ['^vault.*$']), context)).

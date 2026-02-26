@@ -94,7 +94,7 @@ describe FakeFunction do
           end
 
           context 'reading resources' do
-            # Key 'test/resources' matches .*\/resources → vault_get_resources lists common/test/resources and returns resource_1, resource_2.
+            # Key 'test/resources' matches .*\/resources -> vault_get_resources lists common/test/resources and returns resource_1, resource_2.
             it 'Returns the resource if regex matches convert_paths_to_resources and path exists' do
               expect(function.lookup_key('test/resources', vault_options.merge('convert_paths_to_resources' => ['.*\/resources']), context)).to eql({
                                                                                                                                                       'resource_1' => {
@@ -113,7 +113,7 @@ describe FakeFunction do
             end
 
             context "regex matches convert_paths_to_resources but the path doesn't path exist" do
-              # Path nonexisting/resources matches regex but has no children in Vault → not_found.
+              # Path nonexisting/resources matches regex but has no children in Vault -> not_found.
               it 'returns nil' do
                 expect(function.lookup_key('nonexisting/resources', vault_options.merge('convert_paths_to_resources' => ['.*\/resources']), context)).to be_nil
               end
@@ -125,7 +125,7 @@ describe FakeFunction do
               end
             end
 
-            # Key 'test_key' does not match .*\/resources → normal single-value lookup (vault_get_value), not resources.
+            # Key 'test_key' does not match .*\/resources -> normal single-value lookup (vault_get_value), not resources.
             it 'does not return the resource if regex does not match convert_paths_to_resources' do
               expect(context).to receive(:not_found)
               expect(function.lookup_key('test_key', vault_options.merge('convert_paths_to_resources' => ['.*\/resources']), context)).to be_nil

@@ -67,7 +67,7 @@ describe FakeFunction do
             ctx
           end
 
-          # strict_mode true + bad token → must raise LookupError with message including "strict_mode is true so raising as error".
+          # strict_mode true + bad token -> must raise LookupError with message including "strict_mode is true so raising as error".
           it 'throws error when file token is not valid and strict_mode is set to true' do
             vault_token_tmpfile = Tempfile.open('w')
             vault_token_tmpfile.puts('not-valid-token')
@@ -77,7 +77,7 @@ describe FakeFunction do
             end.to raise_error(Puppet::DataBinding::LookupError, %r{Could not read secret puppet/common:.*permission denied.*invalid token.*strict_mode is true so raising as error}m)
           end
 
-          # strict_mode false → no exception; error is only sent to explain (stdout), and no "strict_mode... raising" in message.
+          # strict_mode false -> no exception; error is only sent to explain (stdout), and no "strict_mode... raising" in message.
           it 'does not throw error when file token is not valid and strict_mode is set to false' do
             vault_token_tmpfile = Tempfile.open('w')
             vault_token_tmpfile.puts('not-valid-token')
