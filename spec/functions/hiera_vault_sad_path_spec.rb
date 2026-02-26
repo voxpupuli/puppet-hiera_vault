@@ -8,6 +8,9 @@ require 'support/vault_server'
 require 'puppet/functions/hiera_vault'
 
 describe FakeFunction do
+  # Start Vault once so vault_options can be used in every example without triggering start mid-example.
+  before(:context) { RSpec::VaultServer.address }
+
   let :function do
     described_class.new
   end
@@ -80,7 +83,7 @@ describe FakeFunction do
 
         it 'errors when no token present and no VAULT_TOKEN env set' do
           expect do
-            function.lookup_key('test_key', vault_options.delete('token'), context)
+            function.lookup_key('test_key', vault_options.reject { |k, _| k == 'token' }, context)
           end.to raise_error(ArgumentError, '[hiera-vault] no token set in options and no token in VAULT_TOKEN')
         end
       end
